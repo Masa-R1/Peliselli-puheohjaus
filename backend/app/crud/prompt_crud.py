@@ -1,10 +1,9 @@
-from ..database.models import ChatPrompt
-from ..database.agent import agent
+from ..db.models import ChatPrompt
+from ..db.agent import set_model, invoke_agent
 
 def create_chat(prompt: ChatPrompt):
-    result = agent.invoke(
-        {"messages": [{"role": "user", "content": prompt.prompt}]}
-    )
+    if prompt.model:
+        set_model(prompt.model)
 
-    return result["messages"][-1].content_blocks[-1]["text"]
+    return invoke_agent(prompt.prompt)
     

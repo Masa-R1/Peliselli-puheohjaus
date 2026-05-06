@@ -9,7 +9,7 @@ wheels/
 
 # Virtual environments
 .venv
-
+venv
 
 
 # frontend
