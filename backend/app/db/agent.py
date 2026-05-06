@@ -3,55 +3,72 @@ from langchain.agents import create_agent
 from langchain.agents.middleware import wrap_model_call, ModelRequest, ModelResponse
 import subprocess
 
-def get_available_models() -> dict[str, ChatOllama]:
-    models = dict()
-    model_names = []
 
-    data = subprocess.run(['ollama', 'list'], stdout=subprocess.PIPE).stdout.decode('utf-8')
+class ModelManager:
+    def __init__(self):
+        self.models = self._load_models()
+        self.selected_model = self._get_default_model()
 
-    lines = data.strip().split("\n")
+    def _load_models(self) -> dict[str, ChatOllama]:
+        models = {}
 
-    # Skip the header (first line)
-    for line in lines[1:]:
-        parts = line.split()
-        if parts:
-            model_names.append(parts[0])
+        data = subprocess.run(
+            ['ollama', 'list'],
+            stdout=subprocess.PIPE
+        ).stdout.decode('utf-8')
 
-    print(model_names)
+        lines = data.strip().split("\n")
 
-    [models.update({x: ChatOllama(model=x)}) for x in model_names]
+        for line in lines[1:]:  # skip header
+            parts = line.split()
+            if parts:
+                name = parts[0]
+                models[name] = ChatOllama(model=name)
 
-    return models
+        return models
+    
+    def get_model_names(self) -> list[str]:
+        return list(self.models.keys())
 
-def get_default_model(models: dict[str, ChatOllama]) -> ChatOllama:
-    models = get_available_models()
-    return models[list(models.keys())[0]]
+    def refresh(self):
+        self.models = self._load_models()
+        if self.selected_model_name not in self.models:
+            self.selected_model = self._get_default_model()
 
-selected_model = get_default_model(get_available_models())
+    def _get_default_model(self) -> ChatOllama:
+        return next(iter(self.models.values()))
 
-def set_model(model: str):
-    models = get_available_models()
-    if model in models:
-        selected_model = models[model]
+    @property
+    def selected_model_name(self):
+        for name, model in self.models.items():
+            if model == self.selected_model:
+                return name
+        return None
+
+    def set_model(self, model_name: str):
+        if model_name in self.models:
+            self.selected_model = self.models[model_name]
+
+
+# Create a single manager instance
+model_manager = ModelManager()
+
 
 @wrap_model_call
 def dynamic_model_selection(request: ModelRequest, handler) -> ModelResponse:
-    models = get_available_models()
+    model_manager.refresh()
+    return handler(request.override(model=model_manager.selected_model))
 
-    if selected_model not in models:
-        selected_model = get_default_model(models)
-
-    return handler(request.override(model=selected_model))
 
 agent = create_agent(
-    model=selected_model,
+    model=model_manager.selected_model,
     middleware=[dynamic_model_selection],
     system_prompt="Answer FAST",
 )
+
 
 def invoke_agent(prompt: str) -> str:
     result = agent.invoke(
         {"messages": [{"role": "user", "content": prompt}]}
     )
-
     return result["messages"][-1].content_blocks[-1]["text"]

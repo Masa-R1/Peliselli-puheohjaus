@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from ..db.models import ChatPrompt
-from ..db import agent
+from ..db.agent import model_manager
 from ..crud import prompt_crud as crud
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -11,4 +11,5 @@ def create_chat(prompt: ChatPrompt):
 
 @router.get("", response_model=list[str])
 def get_available_models():
-    return list(agent.get_available_models().keys())
+    model_manager.refresh()
+    return model_manager.get_model_names()
