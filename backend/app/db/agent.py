@@ -1,6 +1,7 @@
 from langchain_ollama import ChatOllama
 from langchain.agents import create_agent
 from langchain.agents.middleware import wrap_model_call, ModelRequest, ModelResponse
+from typing import Optional
 import subprocess
 
 
@@ -66,8 +67,8 @@ agent = create_agent(
 )
 
 
-def invoke_agent(prompt: str) -> str:
-    result = agent.invoke(
-        {"messages": [{"role": "user", "content": prompt}]}
-    )
-    return result["messages"][-1].content_blocks[-1]["text"]
+def invoke_agent(prompt: str, history: Optional[list[dict[str,str]]] = None) -> dict[str,str]:
+    messages = history[:] if history else []
+    messages.append({"role": "user", "content": prompt})
+    result = agent.invoke({"messages": messages})
+    return {"role": "assistant", "content": result["messages"][-1].content_blocks[-1]["text"]}
