@@ -7,7 +7,7 @@ import subprocess
 class ModelManager:
     def __init__(self):
         self.models = self._load_models()
-        self.selected_model = self._get_default_model()
+        self.selected_model_name = self._get_default_model_name()
 
     def _load_models(self) -> dict[str, ChatOllama]:
         models = {}
@@ -26,28 +26,27 @@ class ModelManager:
                 models[name] = ChatOllama(model=name)
 
         return models
-    
+
     def get_model_names(self) -> list[str]:
         return list(self.models.keys())
 
     def refresh(self):
         self.models = self._load_models()
-        if self.selected_model_name not in self.models:
-            self.selected_model = self._get_default_model()
 
-    def _get_default_model(self) -> ChatOllama:
-        return next(iter(self.models.values()))
+        # Ensure selected model still exists
+        if self.selected_model_name not in self.models:
+            self.selected_model_name = self._get_default_model_name()
+
+    def _get_default_model_name(self) -> str:
+        return next(iter(self.models.keys()))
 
     @property
-    def selected_model_name(self):
-        for name, model in self.models.items():
-            if model == self.selected_model:
-                return name
-        return None
+    def selected_model(self) -> ChatOllama:
+        return self.models[self.selected_model_name]
 
     def set_model(self, model_name: str):
         if model_name in self.models:
-            self.selected_model = self.models[model_name]
+            self.selected_model_name = model_name
 
 
 # Create a single manager instance

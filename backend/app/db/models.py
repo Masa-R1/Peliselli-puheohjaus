@@ -2,5 +2,5 @@ from pydantic import BaseModel
 
 
 class ChatPrompt(BaseModel):
-    model: str | None
+    model: str | None = None
     prompt: str
