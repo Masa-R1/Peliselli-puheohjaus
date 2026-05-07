@@ -4,6 +4,7 @@ import logo from "./assets/logo4.png";
 import { useMessageStore } from "./stores/useMessageStore";
 
 function App() {
+
   const [userMessages, setuserMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
   const [voiceEnabled, setVoiceEnabled] = useState(true);
@@ -68,7 +69,7 @@ function App() {
     if (!recognitionRef.current) {
       recognitionRef.current = new SpeechRecognition();
 
-      recognitionRef.current.lang = "en-US";
+      recognitionRef.current.lang = "fi-FI";
       recognitionRef.current.continuous = false;
       recognitionRef.current.interimResults =false;
 
