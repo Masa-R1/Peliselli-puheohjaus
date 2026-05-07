@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import "./App.css";
-import logo from "./assets/logo.jpg";
+import logo from "./assets/logo4.png";
 
 function App() {
   const [messages, setMessages] = useState([]);
