@@ -1,19 +1,31 @@
 import { useState, useRef, useEffect, useId } from "react";
 import "./App.css";
-import logo from "./assets/logo4.png";
+import logo from "./assets/samk-bubble.png";
 import { useMessageStore } from "./stores/useMessageStore";
+import { useConversationStore } from "./stores/useConversationStore"
+import { useStateStore } from "./stores/useStateStore";
 import "./ellipsis-anim.css"
+import Chat from "./components/Chat"
 
 function App() {
-
-  const [userMessages, setuserMessages] = useState([]);
+  const [conversationMessages, setconversationMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
-  const [voiceEnabled, setVoiceEnabled] = useState(true);
-  const [listening, setListening] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   const { messages } = useMessageStore()
 	const { addMessages } = useMessageStore()
+  
+  // Tallennetaan tilat storen listaan, 
+  // josta ne ovat saatavilla globaalisti
+  const { loading } = useStateStore()
+  const { setLoading } = useStateStore()
+
+  const { listening } = useStateStore()
+  const { setListening } = useStateStore()
+
+  const { voiceEnabled } = useStateStore()
+  const { setVoiceEnabled } = useStateStore()
+
+  const { addConversationMessages } = useConversationStore()
 
   const recognitionRef = useRef(null);
   const chatboxRef = useRef(null);
@@ -25,13 +37,14 @@ function App() {
     if (chatboxRef.current) {
       chatboxRef.current.scrollTop = chatboxRef.current.scrollHeight;
     }
-  }, [userMessages, loading]);
+  }, [conversationMessages, loading]);
 
   function appendMessage(text, sender) {
-    setuserMessages((prev) => [
+    setconversationMessages((prev) => [
       ...prev,
       { text, sender }
     ]);
+    addConversationMessages(text, sender)
   }
 
   function speak(text) {
@@ -112,9 +125,8 @@ function App() {
     appendMessage(message, "user");
 
     setInputMessage("");
-    setLoading(true);
 
-    console.log(message)
+    setLoading(true);
 
     const promptInfo = {
       model: "gemma3:latest",
@@ -134,8 +146,6 @@ function App() {
     .then((respose) => respose.json())
     .then(data => {
       reply = data.content
-      console.log(data)
-      console.log(reply)
       addMessages(data)
     })
     .then((newPrompt) => {
@@ -168,47 +178,9 @@ function App() {
           <h3>SAMK Bot</h3>
         </div>
       </header>
-      {/* Chat */}
-      <div
-        className="chatbox"
-        ref={chatboxRef}
-      >
-        {userMessages.map((msg, index) => (
-          <div
-            key={index}
-            className={`message ${msg.sender}`}
-          >
-            {msg.sender === "bot" && (
-              <img
-                src={logo}
-                className="bot-chat-logo"
-                alt="logo"
-              />
-            )}
-
-            <span className="text-bubble">
-              {msg.text}
-            </span>
-          </div>
-        ))}
-
-        {loading && (
-          <div className="message bot typing">
-            <img
-              src={logo}
-              className="bot-chat-logo"
-              alt="logo"
-            />
-
-            <span className="text-bubble typing-text">
-              Typing
-              <span className="dot">.</span>
-              <span className="dot">.</span>
-              <span className="dot">.</span>
-            </span>
-          </div>
-        )}
-      </div>
+      
+      <Chat />
+      
       {/* Input */}
       <div className="input-area">
         {/* Mic */}
