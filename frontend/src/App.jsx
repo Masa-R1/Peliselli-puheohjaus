@@ -1,7 +1,8 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useId } from "react";
 import "./App.css";
 import logo from "./assets/logo4.png";
 import { useMessageStore } from "./stores/useMessageStore";
+import "./ellipsis-anim.css"
 
 function App() {
 
@@ -16,6 +17,8 @@ function App() {
 
   const recognitionRef = useRef(null);
   const chatboxRef = useRef(null);
+
+  const chatboxId = useId();
 
   // Auto-scroll
   useEffect(() => {
@@ -153,7 +156,6 @@ function App() {
 
   return (
     <div className="container">
-
       {/* Header */}
       <header className="chat-header">
         <div className="bot-info">
@@ -166,7 +168,6 @@ function App() {
           <h3>SAMK Bot</h3>
         </div>
       </header>
-
       {/* Chat */}
       <div
         className="chatbox"
@@ -199,16 +200,17 @@ function App() {
               alt="logo"
             />
 
-            <span className="text-bubble">
-              Typing...
+            <span className="text-bubble typing-text">
+              Typing
+              <span className="dot">.</span>
+              <span className="dot">.</span>
+              <span className="dot">.</span>
             </span>
           </div>
         )}
       </div>
-
       {/* Input */}
       <div className="input-area">
-
         {/* Mic */}
         <button
           id="micBtn"
@@ -224,6 +226,7 @@ function App() {
         {/* Text Input */}
         <input
           type="text"
+          id={chatboxId}
           value={inputMessage}
           placeholder="Message SAMK Bot..."
           onChange={(e) =>
