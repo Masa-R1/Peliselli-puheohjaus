@@ -1,16 +1,28 @@
+import { useRef, useEffect } from "react";
 import { useStateStore } from "../stores/useStateStore"
 import { useConversationStore } from "../stores/useConversationStore"
 import logo from "../assets/samk-bubble.png";
+import "../ellipsis-anim.css"
 
 function Chat() {
     const { loading } = useStateStore()
     const { setLoading } = useStateStore()
+
     const { conversationMessages } = useConversationStore()
+
+    const chatboxRef = useRef(null);
+
+    // Auto-scroll
+    useEffect(() => {
+        if (chatboxRef.current) {
+            chatboxRef.current.scrollTop = chatboxRef.current.scrollHeight;
+        }
+    }, [conversationMessages, loading]);
 
     return (
         <div
             className="chatbox"
-            //ref={chatboxRef}
+            ref={chatboxRef}
         >
             {conversationMessages.map((msg, index) => (
                 <div
