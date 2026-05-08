@@ -1,4 +1,4 @@
-import { BrowserRouter, Route } from "react-router"
+import { BrowserRouter, Route, Routes } from "react-router"
 import ChatbotApp from "./ChatbotApp";
 import VoiceApp from "./VoiceApp";
 

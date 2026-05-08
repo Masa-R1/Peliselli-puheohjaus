@@ -2,6 +2,7 @@ import { useState, useId, useRef } from "react"
 import { useStateStore } from "../stores/useStateStore"
 import { useMessageStore } from "../stores/useMessageStore"
 import { useConversationStore } from "../stores/useConversationStore"
+import { useModelStore } from "../stores/useModelStore"
 
 function Input() {
     const { loading } = useStateStore()
@@ -20,6 +21,8 @@ function Input() {
 
     const { conversationMessages } = useConversationStore()
     const { addConversationMessages } = useConversationStore()
+
+    const { selectedModel } = useModelStore()
 
     const chatboxId = useId()
 
@@ -92,8 +95,10 @@ function Input() {
 
         setLoading(true)
 
+        console.log(selectedModel)
+
         const promptInfo = {
-            model: "gemma3:latest",
+            model: selectedModel,
             prompt: message,
             history: messages
         }
