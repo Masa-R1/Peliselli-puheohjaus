@@ -13,6 +13,8 @@ function Input() {
     const { voiceEnabled } = useStateStore()
     const { setVoiceEnabled } = useStateStore()
 
+    const { setIsSpeaking } = useStateStore()
+
     const [inputMessage, setInputMessage] = useState("")
 
     const { messages } = useMessageStore()
@@ -133,6 +135,18 @@ function Input() {
         utterance.rate = 1
         utterance.pitch = 1
         utterance.volume = 1
+
+        utterance.onstart = () => {
+            setIsSpeaking(true)
+        }
+
+        utterance.onend = () => {
+            setIsSpeaking(false)
+        }
+
+        utterance.onerror = () => {
+            setIsSpeaking(false)
+        }
 
         window.speechSynthesis.speak(utterance)
     }

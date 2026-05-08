@@ -96,6 +96,51 @@ body {
   color: #fff;
 }
 
+/* GLOWING BALL INDICATOR */
+.speaking-indicator {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  margin-right: 15px;
+}
+
+.glow-ball {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #888;
+  transition: all 0.3s ease;
+}
+
+.glow-ball.inactive {
+  background: #555;
+  box-shadow: 0 0 0 0 rgba(85, 85, 85, 0);
+}
+
+.glow-ball.active {
+  background: #4fc3f7;
+  animation: pulse-glow 1.5s infinite;
+  box-shadow: 0 0 10px 2px rgba(79, 195, 247, 0.6);
+}
+
+@keyframes pulse-glow {
+  0% {
+    box-shadow: 0 0 10px 2px rgba(79, 195, 247, 0.6),
+                0 0 20px 4px rgba(79, 195, 247, 0.3);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 15px 4px rgba(79, 195, 247, 0.4),
+                0 0 30px 8px rgba(79, 195, 247, 0.1);
+    transform: scale(1.15);
+  }
+  100% {
+    box-shadow: 0 0 10px 2px rgba(79, 195, 247, 0.6),
+                0 0 20px 4px rgba(79, 195, 247, 0.3);
+    transform: scale(1);
+  }
+}
+
 /* CHAT AREA */
 .chatbox {
   flex: 1;
