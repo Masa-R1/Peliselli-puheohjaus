@@ -3,18 +3,17 @@ import { useStateStore } from "../stores/useStateStore"
 import { useMessageStore } from "../stores/useMessageStore"
 import { useConversationStore } from "../stores/useConversationStore"
 import { useModelStore } from "../stores/useModelStore"
+import VoiceInput from "./VoiceInput"
 
 function Input() {
     const { loading } = useStateStore()
     const { setLoading } = useStateStore()
 
-    const { listening } = useStateStore()
-    const { setListening } = useStateStore()
-
     const { voiceEnabled } = useStateStore()
     const { setVoiceEnabled } = useStateStore()
 
-    const [inputMessage, setInputMessage] = useState("")
+    const { inputMessage } = useMessageStore()
+    const { setInputMessage } = useMessageStore()
 
     const { messages } = useMessageStore()
     const { addMessages } = useMessageStore()
@@ -25,45 +24,6 @@ function Input() {
     const { selectedModel } = useModelStore()
 
     const chatboxId = useId()
-
-    const recognitionRef = useRef(null)
-
-    function startListening() {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-
-        if (!SpeechRecognition) {
-            alert("Speech recognition is not supported.")
-            return
-        }
-
-        if (!recognitionRef.current) {
-            recognitionRef.current = new SpeechRecognition()
-
-            recognitionRef.current.lang = "fi-FI"
-            recognitionRef.current.continuous = false
-            recognitionRef.current.interimResults =false
-
-            recognitionRef.current.onstart = () => {
-                setListening(true)
-            }
-
-            recognitionRef.current.onend = () => {
-                setListening(false)
-            }
-
-            recognitionRef.current.onerror = () => {
-                setListening(false)
-            }
-
-            recognitionRef.current.onresult = (event) => {
-                const transcript = event.results[0][0].transcript
-
-                setInputMessage(transcript)
-            }
-        }
-
-        recognitionRef.current.start()
-    }
 
     function handleKeyDown(e) {
         if (e.key === "Enter") {
@@ -144,17 +104,8 @@ function Input() {
 
     return (
         <div className="input-area">
-            {/* Input */}
-            <button
-                id="micBtn"
-                className={
-                    listening ? "listening" : ""
-                }
-                onClick={startListening}
-                disabled={loading}
-            >
-                <i className="fa-solid fa-microphone"></i>
-            </button>
+            {/* Voice Input */}
+            <VoiceInput />
             
             {/* Text input */}
             <input
@@ -169,7 +120,7 @@ function Input() {
                 disabled={loading}
             />
             
-            {/* Voice */}
+            {/* Voice Toggle */}
             <button onClick={toggleVoice}>
             <i
                 className={
