@@ -39,3 +39,11 @@ dist-ssr
 *.sw?
 
 .env
+
+AGENTS.md
+
+.clinerules
+.cursor
+.github
+.opencode
+.windsurf

@@ -3,12 +3,42 @@ from langchain.agents import create_agent
 from langchain.agents.middleware import wrap_model_call, ModelRequest, ModelResponse
 from typing import Optional
 import subprocess
+import time
+from urllib.error import URLError
+from urllib.request import urlopen
 
 
 class ModelManager:
-    def __init__(self):
+    def __load_models_and_set_default(self): 
         self.models = self._load_models()
         self.selected_model_name = self._get_default_model_name()
+
+    def _wait_for_ollama(self, timeout_seconds: int = 30):
+        deadline = time.monotonic() + timeout_seconds
+
+        while time.monotonic() < deadline:
+            try:
+                with urlopen("http://localhost:11434", timeout=1) as response:
+                    if response.status == 200:
+                        return
+            except URLError:
+                time.sleep(0.5)
+
+        raise TimeoutError("Ollama did not become ready on localhost:11434")
+
+    def __init__(self):
+        subprocess.Popen(
+            ['ollama', 'serve'],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        self._wait_for_ollama()
+
+        self.__load_models_and_set_default()
+
+        if not self.selected_model_name or len(self.selected_model_name) < 1:
+            subprocess.run(['ollama', 'pull', 'gpt-3.5-turbo']) 
+            self.__load_models_and_set_default()
 
     def _load_models(self) -> dict[str, ChatOllama]:
         models = {}
@@ -39,7 +69,10 @@ class ModelManager:
             self.selected_model_name = self._get_default_model_name()
 
     def _get_default_model_name(self) -> str:
-        return next(iter(self.models.keys()))
+        try:
+            return next(iter(self.models.keys()))
+        except StopIteration:
+            return str()
 
     @property
     def selected_model(self) -> ChatOllama:
@@ -71,4 +104,9 @@ def invoke_agent(prompt: str, history: Optional[list[dict[str,str]]] = None) -> 
     messages = history[:] if history else []
     messages.append({"role": "user", "content": prompt})
     result = agent.invoke({"messages": messages})
-    return {"role": "assistant", "content": result["messages"][-1].content_blocks[-1]["text"]}
+
+    try:
+        answer = result["messages"][-1].content_blocks[-1]["text"]
+        return {"role": "assistant", "content": answer}
+    except:
+        return {"role": "assistant", "content": "Error: No response from model."}
