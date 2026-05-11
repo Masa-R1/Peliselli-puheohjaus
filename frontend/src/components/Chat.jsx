@@ -52,10 +52,10 @@ function Chat() {
                     />
 
                     <span className="text-bubble typing-text">
-                    Typing
-                    <span className="dot">.</span>
-                    <span className="dot">.</span>
-                    <span className="dot">.</span>
+                        Thinking
+                        <span className="dot">.</span>
+                        <span className="dot">.</span>
+                        <span className="dot">.</span>
                     </span>
                 </div>
             )}

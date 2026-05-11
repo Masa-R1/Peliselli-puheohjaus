@@ -1,4 +1,5 @@
 import logo from "../assets/samk-bubble.png";
+import ModelSelect from "./ModelSelect";
 
 function Header() {
     return (
@@ -10,6 +11,7 @@ function Header() {
                     alt="logo"
                 />
                 <h3>SAMK Bot</h3>
+                <ModelSelect />
             </div>
         </header>
     )
