@@ -217,7 +217,7 @@ export default function VoiceApp() {
                     awaitingCommandRef.current = false
                     setAwaitingCommand(false)
                     setStatusText("Awaiting response...")
-                    await sendToLlm(transcript)
+                    await sendToBackend(transcript)
                     continue
                 }
 
@@ -228,7 +228,7 @@ export default function VoiceApp() {
 
                 if (command) {
                     setStatusText("Activation detected, sending command")
-                    await sendToLlm(command)
+                    await sendToBackend(command)
                     continue
                 }
 
@@ -267,7 +267,7 @@ export default function VoiceApp() {
         }
     }
 
-    async function sendToLlm(commandText) {
+    async function sendToBackend(commandText) {
         const message = commandText.trim()
         if (!message || loadingRef.current) return
 
@@ -352,6 +352,7 @@ export default function VoiceApp() {
             alignItems: "center",
             justifyContent: "center",
             color: "#081114",
+            textShadow: "0 0 0.5rem white",
             fontWeight: 700,
             fontSize: "1rem",
             letterSpacing: "0.06em",
