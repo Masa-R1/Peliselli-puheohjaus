@@ -3,7 +3,7 @@ import { useStateStore } from "../stores/useStateStore"
 import { useMessageStore } from "../stores/useMessageStore"
 import { useConversationStore } from "../stores/useConversationStore"
 
-function Input() {
+function Input({ language }) {
     const { loading } = useStateStore()
     const { setLoading } = useStateStore()
 
@@ -38,7 +38,7 @@ function Input() {
         if (!recognitionRef.current) {
             recognitionRef.current = new SpeechRecognition()
 
-            recognitionRef.current.lang = "fi-FI"
+            recognitionRef.current.lang = language
             recognitionRef.current.continuous = false
             recognitionRef.current.interimResults =false
 
@@ -68,6 +68,8 @@ function Input() {
         if (e.key === "Enter") {
             sendMessage()
         }
+
+        console.log(language)
     }
 
     function toggleVoice() {
@@ -131,7 +133,7 @@ function Input() {
 
         const utterance = new SpeechSynthesisUtterance(text)
 
-        utterance.lang = "en-US"
+        utterance.lang = language
         utterance.rate = 1
         utterance.pitch = 1
         utterance.volume = 1
