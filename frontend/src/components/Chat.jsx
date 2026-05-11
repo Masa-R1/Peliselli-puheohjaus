@@ -27,9 +27,9 @@ function Chat() {
             {conversationMessages.map((msg, index) => (
                 <div
                     key={index}
-                    className={`message ${msg.sender}`}
+                    className={`message ${msg.sender === "bot_update" ? "bot" : msg.sender}`}
                 >
-                {msg.sender === "bot" && (
+                {(msg.sender === "bot" || msg.sender === "bot_update") && (
                     <img
                     src={logo}
                     className="bot-chat-logo"

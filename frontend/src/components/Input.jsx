@@ -105,28 +105,58 @@ function Input({ language }) {
             history: messages
         }
 
-        let reply = ""
+        let fullReply = ""
 
-        fetch("http://localhost:8000/chat", {
-            method: "POST",
-            headers: {
-                "Content-Type": "Application/JSON",
-            },
-            body: JSON.stringify(promptInfo),
+        try {
+            const response = await fetch("http://localhost:8000/chat/stream", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(promptInfo),
             })
-            .then((respose) => respose.json())
-            .then(data => {
-                reply = data.content
-                addMessages(data)
-            })
-            .then((newPrompt) => {
-                addConversationMessages(reply, "bot")
-                speak(reply)
-                setLoading(false)
-            })
-            .catch((error) => {
-            console.log(error)
-        })
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`)
+            }
+
+            const reader = response.body.getReader()
+            const decoder = new TextDecoder()
+
+            // Add initial empty bot message to the conversation
+            addConversationMessages("", "bot")
+
+            while (true) {
+                const { done, value } = await reader.read()
+                if (done) break
+
+                const chunk = decoder.decode(value, { stream: true })
+                
+                // Parse SSE format: "data: content\n\n"
+                const lines = chunk.split('\n')
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const text = line.slice(6) // Remove "data: " prefix
+                        if (text) {
+                            fullReply += text
+                            // Update the last message with streaming content
+                            addConversationMessages(fullReply, "bot_update")
+                        }
+                    }
+                }
+            }
+
+            // Save the complete message to history
+            const botMessage = { role: "assistant", content: fullReply }
+            addMessages(botMessage)
+            
+            speak(fullReply)
+            setLoading(false)
+        } catch (error) {
+            console.error("Error:", error)
+            addConversationMessages("Error: Could not get response from server", "bot")
+            setLoading(false)
+        }
     }
 
     function speak(text) {

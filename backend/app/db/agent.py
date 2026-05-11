@@ -110,3 +110,19 @@ def invoke_agent(prompt: str, history: Optional[list[dict[str,str]]] = None) -> 
         return {"role": "assistant", "content": answer}
     except:
         return {"role": "assistant", "content": "Error: No response from model."}
+
+
+def invoke_agent_streaming(prompt: str, history: Optional[list[dict[str,str]]] = None):
+    """Stream the response from the agent chunk by chunk"""
+    messages = history[:] if history else []
+    messages.append({"role": "user", "content": prompt})
+    
+    try:
+        # Stream the response using the LangChain model's streaming capability
+        for chunk in model_manager.selected_model.stream(messages):
+            if hasattr(chunk, 'content') and chunk.content:
+                yield chunk.content
+            elif isinstance(chunk, str):
+                yield chunk
+    except Exception as e:
+        yield f"Error: {str(e)}"
