@@ -6,6 +6,7 @@ import { useConversationStore } from "./stores/useConversationStore"
 import VoiceAvatar from "./components/VoiceAvatar"
 import VoiceStatusDetails from "./components/VoiceStatusDetails"
 import VoiceToggleListeningButton from "./components/VoiceToggleListeningButton"
+import { getSpeechText } from "./utils/speechText"
 
 import useSound from 'use-sound'
 import notifySound from "./assets/sound/278142__ricemaster__effect_notify.wav"
@@ -317,7 +318,7 @@ export default function VoiceApp() {
         speakingRef.current = true
         window.speechSynthesis.cancel()
 
-        const utterance = new SpeechSynthesisUtterance(text)
+        const utterance = new SpeechSynthesisUtterance(getSpeechText(text))
         utterance.lang = "en-US"
         utterance.rate = 1
         utterance.pitch = 1

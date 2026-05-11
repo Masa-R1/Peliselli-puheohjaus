@@ -1,6 +1,7 @@
 import { useRef, useEffect } from "react";
 import { useStateStore } from "../stores/useStateStore"
 import { useConversationStore } from "../stores/useConversationStore"
+import ReactMarkdown from "react-markdown";
 import logo from "../assets/samk-bubble.png";
 import "../ellipsis-anim.css"
 
@@ -29,17 +30,17 @@ function Chat() {
                     key={index}
                     className={`message ${msg.sender}`}
                 >
-                {msg.sender === "bot" && (
-                    <img
-                    src={logo}
-                    className="bot-chat-logo"
-                    alt="logo"
-                    />
-                )}
+                    {msg.sender === "bot" && (
+                        <img
+                        src={logo}
+                        className="bot-chat-logo"
+                        alt="logo"
+                        />
+                    )}
 
-                <span className="text-bubble">
-                    {msg.text}
-                </span>
+                    <span className="text-bubble">
+                        <ReactMarkdown>{msg.text}</ReactMarkdown>
+                    </span>
                 </div>
             ))}
 

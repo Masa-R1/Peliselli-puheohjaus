@@ -4,6 +4,9 @@ import { useMessageStore } from "../stores/useMessageStore"
 import { useConversationStore } from "../stores/useConversationStore"
 import { useModelStore } from "../stores/useModelStore"
 import VoiceInput from "./VoiceInput"
+import ReactMarkdown from "react-markdown"
+import { getSpeechText } from "../utils/speechText"
+import "../app.css"
 
 function Input({ language }) {
     const { loading } = useStateStore()
@@ -134,7 +137,7 @@ function Input({ language }) {
 
         window.speechSynthesis.cancel()
 
-        const utterance = new SpeechSynthesisUtterance(text)
+        const utterance = new SpeechSynthesisUtterance(getSpeechText(text))
 
         utterance.lang = language
         utterance.rate = 1
@@ -162,6 +165,7 @@ function Input({ language }) {
             <VoiceInput />
             
             {/* Text input */}
+
             <input
                 type="text"
                 id={chatboxId}
