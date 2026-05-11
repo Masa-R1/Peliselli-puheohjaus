@@ -1,5 +1,6 @@
 import logo from "../assets/samk-bubble.png";
 import { useStateStore } from "../stores/useStateStore";
+import "../voiceIndicator.css"
 
 function Header({ language, setLanguage }) {
     const { isSpeaking } = useStateStore();
