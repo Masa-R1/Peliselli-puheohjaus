@@ -2,13 +2,15 @@ import "./App.css"
 import Chat from "./components/Chat"
 import Header from "./components/Header"
 import Input from "./components/Input"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useModelStore } from "./stores/useModelStore"
 
 function ChatbotApp() {
 	const { models } = useModelStore()
 	const { setModels } = useModelStore()
 	const { setSelectedModel } = useModelStore()
+
+	const [language, setLanguage] = useState("en")
 
 	// Hakee mallit sivun avaamisen yhteydessä
 	useEffect(() => {
@@ -25,9 +27,14 @@ function ChatbotApp() {
 
   	return (
     	<div className="container">
-			<Header />
-			<Chat />
-			<Input />
+			<Header
+				language={language}
+				setLanguage={setLanguage}
+			/>
+
+      		<Chat />
+
+      		<Input language={language} />
     	</div>
   	)
 }

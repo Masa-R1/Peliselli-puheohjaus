@@ -5,7 +5,7 @@ import { useConversationStore } from "../stores/useConversationStore"
 import { useModelStore } from "../stores/useModelStore"
 import VoiceInput from "./VoiceInput"
 
-function Input() {
+function Input({ language }) {
     const { loading } = useStateStore()
     const { setLoading } = useStateStore()
 
@@ -14,6 +14,7 @@ function Input() {
 
     const { inputMessage } = useMessageStore()
     const { setInputMessage } = useMessageStore()
+    const { setIsSpeaking } = useStateStore()
 
     const { messages } = useMessageStore()
     const { addMessages } = useMessageStore()
@@ -25,10 +26,51 @@ function Input() {
 
     const chatboxId = useId()
 
+    const recognitionRef = useRef(null)
+
+    function startListening() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+
+        if (!SpeechRecognition) {
+            alert("Speech recognition is not supported.")
+            return
+        }
+
+        if (!recognitionRef.current) {
+            recognitionRef.current = new SpeechRecognition()
+
+            recognitionRef.current.lang = language
+            recognitionRef.current.continuous = false
+            recognitionRef.current.interimResults =false
+
+            recognitionRef.current.onstart = () => {
+                setListening(true)
+            }
+
+            recognitionRef.current.onend = () => {
+                setListening(false)
+            }
+
+            recognitionRef.current.onerror = () => {
+                setListening(false)
+            }
+
+            recognitionRef.current.onresult = (event) => {
+                const transcript = event.results[0][0].transcript
+
+                setInputMessage(transcript)
+            }
+        }
+
+        recognitionRef.current.start()
+    }
+
     function handleKeyDown(e) {
         if (e.key === "Enter") {
             sendMessage()
         }
+
+        console.log(language)
     }
 
     function toggleVoice() {
@@ -94,10 +136,22 @@ function Input() {
 
         const utterance = new SpeechSynthesisUtterance(text)
 
-        utterance.lang = "en-US"
+        utterance.lang = language
         utterance.rate = 1
         utterance.pitch = 1
         utterance.volume = 1
+
+        utterance.onstart = () => {
+            setIsSpeaking(true)
+        }
+
+        utterance.onend = () => {
+            setIsSpeaking(false)
+        }
+
+        utterance.onerror = () => {
+            setIsSpeaking(false)
+        }
 
         window.speechSynthesis.speak(utterance)
     }
