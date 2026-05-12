@@ -3,27 +3,27 @@ import Chat from "./components/Chat"
 import Header from "./components/Header"
 import Input from "./components/Input"
 import { useEffect, useState } from "react"
-import { useModelStore } from "./stores/useModelStore"
 
 function ChatbotApp() {
-	const { models } = useModelStore()
-	const { setModels } = useModelStore()
-	const { setSelectedModel } = useModelStore()
+	const [ listeningState, setListeningState ] = useState(false)
 
 	const [language, setLanguage] = useState("en")
 
-	// Hakee mallit sivun avaamisen yhteydessä
+	// Hakee kuuntelun tilan
 	useEffect(() => {
-		fetch("http://localhost:8000/chat")
-		.then((respose) => respose.json())
-		.then(data => {
-			setModels(data)
-			setSelectedModel(data[0])
-		})
-		.catch((error) => {
-			console.log(error)
-        })
-	}, [])
+		const interval = setInterval(() => {
+			fetch("http://localhost:8000/voice")
+			.then((respose) => respose.json())
+			.then(data => {
+				setListeningState(data.enabled)
+			})
+			.catch((error) => {
+				console.log(error)
+			})
+		}, 5000)
+
+		return () => clearInterval(interval)
+	})
 
   	return (
     	<div className="container">
