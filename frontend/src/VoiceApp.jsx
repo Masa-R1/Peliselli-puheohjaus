@@ -50,7 +50,7 @@ function findWakePhraseWordsInOrder(normalizedTranscript, normalizedWakePhrase) 
 export default function VoiceApp() {
     const [playNotify] = useSound(notifySound, { volume: 0.5 })
 
-    const { loading, voiceEnabled, setLoading, setListening } = useStateStore()
+    const { loading, voiceEnabled, setLoading, setListening, haListening, setHaListening } = useStateStore()
     const { messages, addMessages } = useMessageStore()
     const { addConversationMessages } = useConversationStore()
 
@@ -83,8 +83,8 @@ export default function VoiceApp() {
     }, [messages])
 
     useEffect(() => {
-        listeningEnabledRef.current = wakeListeningEnabled
-        if (!wakeListeningEnabled) {
+        listeningEnabledRef.current = haListening
+        if (!(haListening && wakeListeningEnabled)) {
             setStatusText("Wake listener disabled")
             setAwaitingCommand(false)
             awaitingCommandRef.current = false
@@ -95,7 +95,7 @@ export default function VoiceApp() {
         if (loadingRef.current || speakingRef.current) return
         setStatusText(WAITING)
         startRecognition()
-    }, [wakeListeningEnabled])
+    }, [haListening, wakeListeningEnabled])
 
     useEffect(() => {
         loadingRef.current = loading
@@ -250,6 +250,22 @@ export default function VoiceApp() {
         }
     }, [])
 
+    // Hakee kuuntelun tilan
+    useEffect(() => {
+		const interval = setInterval(() => {
+			fetch("http://localhost:8000/voice")
+			.then((respose) => respose.json())
+			.then(data => {
+				setHaListening(data.enabled)
+			})
+			.catch((error) => {
+				console.log(error)
+			})
+		}, 5000)
+
+		return () => clearInterval(interval)
+	})
+
     function stopRecognition() {
         try {
             recognitionRef.current?.stop()
@@ -335,7 +351,7 @@ export default function VoiceApp() {
     }
 
     const circleStyle = useMemo(() => {
-        const isActive = wakeListeningEnabled && !loading
+        const isActive = wakeListeningEnabled &&  haListening && !loading
 
         return {
             width: "220px",
@@ -359,7 +375,7 @@ export default function VoiceApp() {
             letterSpacing: "0.06em",
             textTransform: "uppercase",
         }
-    }, [loading, wakeListeningEnabled]);
+    }, [loading, haListening, wakeListeningEnabled]);
 
     return (
         <div
@@ -385,11 +401,6 @@ export default function VoiceApp() {
                 lastHeard={lastHeard}
                 lastReply={lastReply}
                 errorText={errorText}
-            />
-
-            <VoiceToggleListeningButton
-                enabled={wakeListeningEnabled}
-                onClick={() => setWakeListeningEnabled((prev) => !prev)}
             />
         </div>
     )

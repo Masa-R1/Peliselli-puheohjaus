@@ -19,45 +19,6 @@ function Input({ language }) {
 
     const chatboxId = useId()
 
-    const recognitionRef = useRef(null)
-
-    function startListening() {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-
-        if (!SpeechRecognition) {
-            alert("Speech recognition is not supported.")
-            return
-        }
-
-        if (!recognitionRef.current) {
-            recognitionRef.current = new SpeechRecognition()
-
-            recognitionRef.current.lang = language
-            recognitionRef.current.continuous = false
-            recognitionRef.current.interimResults =false
-
-            recognitionRef.current.onstart = () => {
-                setListening(true)
-            }
-
-            recognitionRef.current.onend = () => {
-                setListening(false)
-            }
-
-            recognitionRef.current.onerror = () => {
-                setListening(false)
-            }
-
-            recognitionRef.current.onresult = (event) => {
-                const transcript = event.results[0][0].transcript
-
-                setInputMessage(transcript)
-            }
-        }
-
-        recognitionRef.current.start()
-    }
-
     function handleKeyDown(e) {
         if (e.key === "Enter") {
             sendMessage()
@@ -72,6 +33,33 @@ function Input({ language }) {
             return !prev
         })
     }
+
+    // const checkMessage = (aiAnswer) => {
+    //     const settingKeywords = ["changing", "switching", "making", "switch", "switched", "change", "make", "adjust", "adjusted", "adjusting", "set", "shifting", "update", "updating", "set", "setting"]
+
+    //     const colorKeywords = ["red", "green", "blue", "yellow", "purple"]
+
+    //     aiAnswer = aiAnswer.toLowerCase().split(" ")
+
+    //     const overlap = settingKeywords.some(item => aiAnswer.includes(item))
+
+    //     if (overlap) {
+    //         const findColor = colorKeywords.find(value => aiAnswer.includes(value))
+
+    //         if (findColor !== undefined) {
+    //             switch (findColor) {
+    //                 case "red":
+    //                     console.log(findColor)
+    //                     break;
+    //                 case "green":
+    //                     console.log(findColor)
+    //                     break;
+    //                 default:
+    //                     break;
+    //             }
+    //         }
+    //     }
+    // }
 
     async function sendMessage() {
         const message = inputMessage.trim()
@@ -104,19 +92,20 @@ function Input({ language }) {
                 "Content-Type": "Application/JSON",
             },
             body: JSON.stringify(promptInfo),
-            })
-            .then((respose) => respose.json())
-            .then(data => {
-                reply = data.content
-                addMessages(data)
-            })
-            .then((newPrompt) => {
-                addConversationMessages(reply, "bot")
-                speak(reply)
-                setLoading(false)
-            })
-            .catch((error) => {
+        })
+        .then((respose) => respose.json())
+        .then(data => {
+            reply = data.content
+            addMessages(data)
+        })
+        .then((newPrompt) => {
+            addConversationMessages(reply, "bot")
+            speak(reply)
+            setLoading(false)
+        })
+        .catch((error) => {
             console.log(error)
+    
         })
     }
 
