@@ -6,9 +6,15 @@ import subprocess
 import time
 from urllib.error import URLError
 from urllib.request import urlopen
-# from langchain.tools import Tool
+from langchain.tools import tool
 
 
+# Testi tool
+# @tool(
+#     name="change_Light_Color",
+#     func=lambda color: f"Changed light color to {color}.",
+#     description="Changes the light color in Home Assistant and returns a confirmation message."
+# )
 
 class ModelManager:
     def __load_models_and_set_default(self): 
