@@ -3,9 +3,7 @@ import { useMessageStore } from "../stores/useMessageStore"
 import { useStateStore } from "../stores/useStateStore"
 
 function VoiceInput() {
-    const { loading } = useStateStore()
-    const { listening } = useStateStore()
-    const { setListening } = useStateStore()
+    const { loading, listening, setListening } = useStateStore()
 
     const { setInputMessage } = useMessageStore()
 
