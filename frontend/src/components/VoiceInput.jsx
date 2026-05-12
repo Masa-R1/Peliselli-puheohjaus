@@ -2,10 +2,8 @@ import { useRef } from "react"
 import { useMessageStore } from "../stores/useMessageStore"
 import { useStateStore } from "../stores/useStateStore"
 
-function VoiceInput({language}) {
-    const { loading } = useStateStore()
-    const { listening } = useStateStore()
-    const { setListening } = useStateStore()
+function VoiceInput() {
+    const { loading, listening, setListening } = useStateStore()
 
     const { setInputMessage } = useMessageStore()
 

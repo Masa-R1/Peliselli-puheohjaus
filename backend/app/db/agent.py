@@ -95,8 +95,7 @@ def dynamic_model_selection(request: ModelRequest, handler) -> ModelResponse:
 
 agent = create_agent(
     model=model_manager.selected_model,
-    middleware=[dynamic_model_selection],
-    system_prompt="Answer FAST",
+    middleware=[dynamic_model_selection]
 )
 
 

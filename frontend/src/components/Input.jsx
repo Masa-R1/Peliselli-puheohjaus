@@ -9,21 +9,11 @@ import { getSpeechText } from "../utils/speechText"
 import "../app.css"
 
 function Input({ language }) {
-    const { loading } = useStateStore()
-    const { setLoading } = useStateStore()
+    const { loading, setLoading, voiceEnabled, setVoiceEnabled, setIsSpeaking } = useStateStore()
 
-    const { voiceEnabled } = useStateStore()
-    const { setVoiceEnabled } = useStateStore()
+    const { inputMessage, setInputMessage, messages, addMessages } = useMessageStore()
 
-    const { inputMessage } = useMessageStore()
-    const { setInputMessage } = useMessageStore()
-    const { setIsSpeaking } = useStateStore()
-
-    const { messages } = useMessageStore()
-    const { addMessages } = useMessageStore()
-
-    const { conversationMessages } = useConversationStore()
-    const { addConversationMessages } = useConversationStore()
+    const { conversationMessages, addConversationMessages } = useConversationStore()
 
     const { selectedModel } = useModelStore()
 
@@ -72,8 +62,6 @@ function Input({ language }) {
         if (e.key === "Enter") {
             sendMessage()
         }
-
-        console.log(language)
     }
 
     function toggleVoice() {
@@ -100,13 +88,13 @@ function Input({ language }) {
 
         setLoading(true)
 
-        console.log(selectedModel)
-
         const promptInfo = {
             model: selectedModel,
             prompt: message,
             history: messages
         }
+
+        console.log(promptInfo)
 
         let reply = ""
 
