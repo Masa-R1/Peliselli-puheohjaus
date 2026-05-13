@@ -4,73 +4,25 @@ import { useMessageStore } from "../stores/useMessageStore"
 import { useConversationStore } from "../stores/useConversationStore"
 import { useModelStore } from "../stores/useModelStore"
 import VoiceInput from "./VoiceInput"
+import ReactMarkdown from "react-markdown"
+import { getSpeechText } from "../utils/speechText"
+import "../app.css"
 
 function Input({ language }) {
-    const { loading } = useStateStore()
-    const { setLoading } = useStateStore()
+    const { loading, setLoading, voiceEnabled, setVoiceEnabled, setIsSpeaking } = useStateStore()
 
-    const { voiceEnabled } = useStateStore()
-    const { setVoiceEnabled } = useStateStore()
+    const { inputMessage, setInputMessage, messages, addMessages } = useMessageStore()
 
-    const { inputMessage } = useMessageStore()
-    const { setInputMessage } = useMessageStore()
-    const { setIsSpeaking } = useStateStore()
-
-    const { messages } = useMessageStore()
-    const { addMessages } = useMessageStore()
-
-    const { conversationMessages } = useConversationStore()
-    const { addConversationMessages } = useConversationStore()
+    const { conversationMessages, addConversationMessages } = useConversationStore()
 
     const { selectedModel } = useModelStore()
 
     const chatboxId = useId()
 
-    const recognitionRef = useRef(null)
-
-    function startListening() {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-
-        if (!SpeechRecognition) {
-            alert("Speech recognition is not supported.")
-            return
-        }
-
-        if (!recognitionRef.current) {
-            recognitionRef.current = new SpeechRecognition()
-
-            recognitionRef.current.lang = language
-            recognitionRef.current.continuous = false
-            recognitionRef.current.interimResults =false
-
-            recognitionRef.current.onstart = () => {
-                setListening(true)
-            }
-
-            recognitionRef.current.onend = () => {
-                setListening(false)
-            }
-
-            recognitionRef.current.onerror = () => {
-                setListening(false)
-            }
-
-            recognitionRef.current.onresult = (event) => {
-                const transcript = event.results[0][0].transcript
-
-                setInputMessage(transcript)
-            }
-        }
-
-        recognitionRef.current.start()
-    }
-
     function handleKeyDown(e) {
         if (e.key === "Enter") {
             sendMessage()
         }
-
-        console.log(language)
     }
 
     function toggleVoice() {
@@ -81,6 +33,33 @@ function Input({ language }) {
             return !prev
         })
     }
+
+    // const checkMessage = (aiAnswer) => {
+    //     const settingKeywords = ["changing", "switching", "making", "switch", "switched", "change", "make", "adjust", "adjusted", "adjusting", "set", "shifting", "update", "updating", "set", "setting"]
+
+    //     const colorKeywords = ["red", "green", "blue", "yellow", "purple"]
+
+    //     aiAnswer = aiAnswer.toLowerCase().split(" ")
+
+    //     const overlap = settingKeywords.some(item => aiAnswer.includes(item))
+
+    //     if (overlap) {
+    //         const findColor = colorKeywords.find(value => aiAnswer.includes(value))
+
+    //         if (findColor !== undefined) {
+    //             switch (findColor) {
+    //                 case "red":
+    //                     console.log(findColor)
+    //                     break;
+    //                 case "green":
+    //                     console.log(findColor)
+    //                     break;
+    //                 default:
+    //                     break;
+    //             }
+    //         }
+    //     }
+    // }
 
     async function sendMessage() {
         const message = inputMessage.trim()
@@ -97,66 +76,37 @@ function Input({ language }) {
 
         setLoading(true)
 
-        console.log(selectedModel)
-
         const promptInfo = {
             model: selectedModel,
             prompt: message,
             history: messages
         }
 
-        let fullReply = ""
+        console.log(promptInfo)
 
-        try {
-            const response = await fetch("http://localhost:8000/chat/stream", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(promptInfo),
-            })
+        let reply = ""
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`)
-            }
-
-            const reader = response.body.getReader()
-            const decoder = new TextDecoder()
-
-            // Add initial empty bot message to the conversation
-            addConversationMessages("", "bot")
-
-            while (true) {
-                const { done, value } = await reader.read()
-                if (done) break
-
-                const chunk = decoder.decode(value, { stream: true })
-                
-                // Parse SSE format: "data: content\n\n"
-                const lines = chunk.split('\n')
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        const text = line.slice(6) // Remove "data: " prefix
-                        if (text) {
-                            fullReply += text
-                            // Update the last message with streaming content
-                            addConversationMessages(fullReply, "bot_update")
-                        }
-                    }
-                }
-            }
-
-            // Save the complete message to history
-            const botMessage = { role: "assistant", content: fullReply }
-            addMessages(botMessage)
-            
-            speak(fullReply)
+        fetch("http://localhost:8000/chat", {
+            method: "POST",
+            headers: {
+                "Content-Type": "Application/JSON",
+            },
+            body: JSON.stringify(promptInfo),
+        })
+        .then((respose) => respose.json())
+        .then(data => {
+            reply = data.content
+            addMessages(data)
+        })
+        .then((newPrompt) => {
+            addConversationMessages(reply, "bot")
+            speak(reply)
             setLoading(false)
-        } catch (error) {
-            console.error("Error:", error)
-            addConversationMessages("Error: Could not get response from server", "bot")
-            setLoading(false)
-        }
+        })
+        .catch((error) => {
+            console.log(error)
+    
+        })
     }
 
     function speak(text) {
@@ -164,7 +114,7 @@ function Input({ language }) {
 
         window.speechSynthesis.cancel()
 
-        const utterance = new SpeechSynthesisUtterance(text)
+        const utterance = new SpeechSynthesisUtterance(getSpeechText(text))
 
         utterance.lang = language
         utterance.rate = 1
@@ -192,6 +142,7 @@ function Input({ language }) {
             <VoiceInput />
             
             {/* Text input */}
+
             <input
                 type="text"
                 id={chatboxId}

@@ -1,6 +1,7 @@
 import { useRef, useEffect } from "react";
 import { useStateStore } from "../stores/useStateStore"
 import { useConversationStore } from "../stores/useConversationStore"
+import ReactMarkdown from "react-markdown";
 import logo from "../assets/samk-bubble.png";
 import "../ellipsis-anim.css"
 
@@ -11,6 +12,34 @@ function Chat() {
     const { conversationMessages } = useConversationStore()
 
     const chatboxRef = useRef(null);
+
+    // Mitä!?
+    // const checkMessage = (aiAnswer) => {
+    //     const settingKeywords = ["changing", "switching", "making"]
+
+    //     const colorKeywords = ["red", "green", "blue", "yellow", "purple"]
+
+    //     aiAnswer = aiAnswer.toLowerCase().split(" ")
+
+    //     const overlap = settingKeywords.some(item => aiAnswer.includes(item))
+
+    //     if (overlap) {
+    //         const findColor = colorKeywords.find(value => aiAnswer.includes(value))
+
+    //         if (colorMatch !== undefined) {
+    //             switch (colorMatch) {
+    //                 case "red":
+    //                     console.log(colorMatch)
+    //                     break;
+    //                 case "green":
+    //                     console.log(colorMatch)
+    //                     break;
+    //                 default:
+    //                     break;
+    //             }
+    //         }
+    //     }
+    // }
 
     // Auto-scroll
     useEffect(() => {
@@ -29,17 +58,17 @@ function Chat() {
                     key={index}
                     className={`message ${msg.sender === "bot_update" ? "bot" : msg.sender}`}
                 >
-                {(msg.sender === "bot" || msg.sender === "bot_update") && (
-                    <img
-                    src={logo}
-                    className="bot-chat-logo"
-                    alt="logo"
-                    />
-                )}
+                    {msg.sender === "bot" && (
+                        <img
+                            src={logo}
+                            className="bot-chat-logo"
+                            alt="logo"
+                        />
+                    )}
 
-                <span className="text-bubble">
-                    {msg.text}
-                </span>
+                    <span className="text-bubble">
+                        <ReactMarkdown>{msg.text}</ReactMarkdown>
+                    </span>
                 </div>
             ))}
 

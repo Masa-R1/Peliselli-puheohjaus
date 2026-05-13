@@ -3,9 +3,7 @@ import { useMessageStore } from "../stores/useMessageStore"
 import { useStateStore } from "../stores/useStateStore"
 
 function VoiceInput({language}) {
-    const { loading } = useStateStore()
-    const { listening } = useStateStore()
-    const { setListening } = useStateStore()
+    const { loading, listening, setListening } = useStateStore()
 
     const { setInputMessage } = useMessageStore()
 
@@ -22,7 +20,8 @@ function VoiceInput({language}) {
         if (!recognitionRef.current) {
             recognitionRef.current = new SpeechRecognition()
 
-            recognitionRef.current.lang = "fi-FI"
+            recognitionRef.current.lang = language
+            console.log(recognitionRef.current.lang)
             recognitionRef.current.continuous = false
             recognitionRef.current.interimResults =false
 

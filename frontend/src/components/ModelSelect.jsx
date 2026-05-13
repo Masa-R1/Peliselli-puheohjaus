@@ -1,9 +1,23 @@
+import { useEffect } from "react";
 import { useModelStore } from "../stores/useModelStore";
 
 function ModelSelect() {
     const { models } = useModelStore()
+    const { setModels } = useModelStore()
     const { setSelectedModel } = useModelStore()
     const { selectedModel } = useModelStore()
+
+    useEffect(() => {
+		fetch("http://localhost:8000/chat")
+		.then((respose) => respose.json())
+		.then(data => {
+			setModels(data)
+			setSelectedModel(data[0])
+		})
+		.catch((error) => {
+			console.log(error)
+        })
+	}, [])
 
     return (
         <div style={{paddingLeft:15}}>

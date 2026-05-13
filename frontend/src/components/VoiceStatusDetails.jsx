@@ -1,3 +1,5 @@
+import ReactMarkdown from "react-markdown"
+
 function VoiceStatusDetails({
     wakePhrase,
     statusText,
@@ -27,7 +29,7 @@ function VoiceStatusDetails({
 
             {lastReply && (
                 <p style={{ margin: 0, maxWidth: "720px", textAlign: "center" }}>
-                    Reply: {lastReply}
+                    Reply: <ReactMarkdown>{lastReply}</ReactMarkdown>
                 </p>
             )}
 

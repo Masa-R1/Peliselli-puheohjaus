@@ -1,0 +1,16 @@
+export function getSpeechText(text) {
+    return String(text ?? "")
+        .replace(/```[\s\S]*?```/g, (match) => match.replace(/```/g, " "))
+        .replace(/`([^`]+)`/g, "$1")
+        .replace(/!\[([^\]]*)\]\([^\)]+\)/g, "$1")
+        .replace(/\[([^\]]+)\]\([^\)]+\)/g, "$1")
+        .replace(/^\s{0,3}#{1,6}\s+/gm, "")
+        .replace(/^\s{0,3}>\s?/gm, "")
+        .replace(/^\s{0,3}[-*+]\s+/gm, "")
+        .replace(/^\s{0,3}\d+\.\s+/gm, "")
+        .replace(/[>*_~]+/g, "")
+        .replace(/\|/g, " ")
+        .replace(/\n+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+}

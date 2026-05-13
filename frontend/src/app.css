@@ -193,6 +193,12 @@ justify-content: flex-end;
   word-break: break-word;
 }
 
+.text-bubble p,
+.text-bubble code {
+  margin: 0;
+  text-wrap-mode: wrap;
+}
+
 /* USER */
 .message.user .text-bubble {
   background: #2f2f2f;
