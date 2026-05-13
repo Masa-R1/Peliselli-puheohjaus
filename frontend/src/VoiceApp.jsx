@@ -8,6 +8,7 @@ import VoiceAvatar from "./components/VoiceAvatar"
 import VoiceStatusDetails from "./components/VoiceStatusDetails"
 import VoiceToggleListeningButton from "./components/VoiceToggleListeningButton"
 import { getSpeechText } from "./utils/speechText"
+import { apiUrl } from "./utils/api"
 
 import useSound from 'use-sound'
 import notifySound from "./assets/sound/278142__ricemaster__effect_notify.wav"
@@ -267,7 +268,7 @@ export default function VoiceApp() {
     useEffect(() => {
         const interval = setInterval(async () => {
             try {
-                const res = await fetch("http://localhost:8000/voice")
+                const res = await fetch(apiUrl("/voice"))
                 const data = await res.json()
                 setHaListening(data.enabled)
                 if (!data.enabled) {
@@ -328,7 +329,7 @@ export default function VoiceApp() {
                 history: messagesRef.current,
             }
 
-            const response = await fetch("http://localhost:8000/chat", {
+            const response = await fetch(apiUrl("/chat"), {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

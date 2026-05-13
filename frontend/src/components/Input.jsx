@@ -6,6 +6,7 @@ import { useModelStore } from "../stores/useModelStore"
 import VoiceInput from "./VoiceInput"
 import ReactMarkdown from "react-markdown"
 import { getSpeechText } from "../utils/speechText"
+import { apiUrl } from "../utils/api"
 import "../app.css"
 import { useTranslation } from "react-i18next";
 
@@ -62,7 +63,7 @@ function Input() {
 
         let reply = ""
 
-        fetch("http://localhost:8000/chat", {
+        fetch(apiUrl("/chat"), {
             method: "POST",
             headers: {
                 "Content-Type": "Application/JSON",
