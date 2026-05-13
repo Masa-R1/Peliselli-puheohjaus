@@ -1,4 +1,4 @@
-__voice_enabled = False
+__voice_enabled = True
 
 def is_voice_enabled():
     return __voice_enabled;

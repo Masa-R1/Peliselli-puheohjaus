@@ -22,7 +22,7 @@ class ModelManager:
         self.models = self._load_models()
         self.selected_model_name = self._get_default_model_name()
 
-    def _wait_for_ollama(self, timeout_seconds: int = 30):
+    def _wait_for_ollama(self, timeout_seconds: int = 45):
         deadline = time.monotonic() + timeout_seconds
 
         while time.monotonic() < deadline:
@@ -31,6 +31,8 @@ class ModelManager:
                     if response.status == 200:
                         return
             except URLError:
+                pass    
+            except TimeoutError:
                 time.sleep(0.5)
 
         raise TimeoutError("Ollama did not become ready on localhost:11434")

@@ -28,9 +28,9 @@ function VoiceStatusDetails({
             )}
 
             {lastReply && (
-                <p style={{ margin: 0, maxWidth: "720px", textAlign: "center" }}>
+                <div style={{ margin: 0, maxWidth: "720px", textAlign: "center" }}>
                     Reply: <ReactMarkdown>{lastReply}</ReactMarkdown>
-                </p>
+                </div>
             )}
 
             {errorText && (

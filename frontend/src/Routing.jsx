@@ -6,8 +6,8 @@ export default function Routing() {
     return (
         <BrowserRouter>
             <Routes>
-                <Route path="/" element={<ChatbotApp/>}/>
-                <Route path="/voiceapp" element={<VoiceApp/>}/>
+                <Route path="/" element={<VoiceApp/>}/>
+                <Route path="/chat_ui" element={<ChatbotApp/>}/>
             </Routes>
         </BrowserRouter>
     );
