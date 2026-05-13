@@ -1,5 +1,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useStateStore } from "./stores/useStateStore"
 import { useMessageStore } from "./stores/useMessageStore"
 import { useConversationStore } from "./stores/useConversationStore"
@@ -10,10 +11,9 @@ import { getSpeechText } from "./utils/speechText"
 
 import useSound from 'use-sound'
 import notifySound from "./assets/sound/278142__ricemaster__effect_notify.wav"
-
-const WAKE_PHRASE = "hey assistant"
 const WAITING = "Awaiting activation..."
 const THINK_PHRASES = ["Thinking...", "Calculating...", "Pondering...", "Analyzing...", "Reflecting...", "Generating slop..."]
+const FOLLOWUP_TIMEOUT_MS = 20000
 
 function normalizeSpeechForWakePhrase(text) {
     return text
@@ -48,6 +48,7 @@ function findWakePhraseWordsInOrder(normalizedTranscript, normalizedWakePhrase) 
 }
 
 export default function VoiceApp() {
+    const { t, i18n } = useTranslation()
     const [playNotify] = useSound(notifySound, { volume: 0.5 })
 
     const { loading, voiceEnabled, setLoading, setListening, haListening, setHaListening } = useStateStore()
@@ -62,8 +63,8 @@ export default function VoiceApp() {
     const [errorText, setErrorText] = useState("")
     const [thinkText, setThinkText] = useState("Assistant")
     const normalizedWakePhrase = useMemo(
-        () => normalizeSpeechForWakePhrase(WAKE_PHRASE),
-        []
+        () => normalizeSpeechForWakePhrase(t("wakePhrase")),
+        [t]
     )
 
     const recognitionRef = useRef(null)
@@ -75,6 +76,8 @@ export default function VoiceApp() {
     const speakingRef = useRef(false)
     const messagesRef = useRef(messages)
     const awaitingCommandRef = useRef(false)
+    const followUpModeRef = useRef(false)
+    const followUpTimeoutRef = useRef(null)
     const thinkPhraseRef = useRef("")
     const thinkIndexRef = useRef(0)
 
@@ -162,7 +165,7 @@ export default function VoiceApp() {
         }
 
         const recognition = new SpeechRecognition()
-        recognition.lang = "en-US"
+        recognition.lang = i18n.language
         recognition.continuous = true
         recognition.interimResults = false
 
@@ -200,7 +203,7 @@ export default function VoiceApp() {
                 setWakeListeningEnabled(false)
             }
         }
-
+        
         recognition.onresult = async (event) => {
             if (speakingRef.current) return
 
@@ -214,10 +217,19 @@ export default function VoiceApp() {
                 setLastHeard(transcript)
                 const normalized = normalizeSpeechForWakePhrase(transcript)
 
+                // Follow-up mode: treat any speech as immediate command
+                if (followUpModeRef.current) {
+                    setStatusText("Sending follow-up command...")
+                    stopRecognition()
+                    await sendToBackend(transcript)
+                    continue
+                }
+
                 if (awaitingCommandRef.current) {
                     awaitingCommandRef.current = false
                     setAwaitingCommand(false)
                     setStatusText("Awaiting response...")
+                    stopRecognition()
                     await sendToBackend(transcript)
                     continue
                 }
@@ -229,6 +241,7 @@ export default function VoiceApp() {
 
                 if (command) {
                     setStatusText("Activation detected, sending command")
+                    stopRecognition()
                     await sendToBackend(command)
                     continue
                 }
@@ -252,18 +265,30 @@ export default function VoiceApp() {
 
     // Hakee kuuntelun tilan
     useEffect(() => {
-		const interval = setInterval(() => {
-			fetch("http://localhost:8000/voice")
-			.then((respose) => respose.json())
-			.then(data => {
-				setHaListening(data.enabled)
-			})
-			.catch((error) => {
-				console.log(error)
-			})
-		}, 5000)
+        const interval = setInterval(async () => {
+            try {
+                const res = await fetch("http://localhost:8000/voice")
+                const data = await res.json()
+                setHaListening(data.enabled)
+                if (!data.enabled) {
+                    followUpModeRef.current = false
+                    if (followUpTimeoutRef.current) {
+                        clearTimeout(followUpTimeoutRef.current)
+                        followUpTimeoutRef.current = null
+                    }
+                }
+            } catch (error) {
+                console.log(error)
+            }
+        }, 2000)
 
-		return () => clearInterval(interval)
+        return () => {
+            clearInterval(interval)
+            if (followUpTimeoutRef.current) {
+                clearTimeout(followUpTimeoutRef.current)
+                followUpTimeoutRef.current = null
+            }
+        }
 	})
 
     function stopRecognition() {
@@ -291,7 +316,8 @@ export default function VoiceApp() {
         const userMessage = { role: "user", content: message }
         addMessages(userMessage)
         addConversationMessages(message, "user")
-
+        // stop recognition now; speak.onend will restart and enable follow-up window
+        stopRecognition()
         setLoading(true)
         setStatusText("Waiting for response...")
 
@@ -322,9 +348,7 @@ export default function VoiceApp() {
             setStatusText(WAITING)
         } finally {
             setLoading(false)
-            if (listeningEnabledRef.current) {
-                startRecognition()
-            }
+            // do not restart recognition here; `speak` will restart and manage follow-up mode
         }
     }
 
@@ -335,7 +359,7 @@ export default function VoiceApp() {
         window.speechSynthesis.cancel()
 
         const utterance = new SpeechSynthesisUtterance(getSpeechText(text))
-        utterance.lang = "en-US"
+        utterance.lang = i18n.language
         utterance.rate = 1
         utterance.pitch = 1
         utterance.volume = 1
@@ -343,7 +367,14 @@ export default function VoiceApp() {
         utterance.onend = () => {
             speakingRef.current = false
             if (listeningEnabledRef.current && !loadingRef.current) {
+                // restart recognition and open follow-up window
                 startRecognition()
+                followUpModeRef.current = true
+                if (followUpTimeoutRef.current) clearTimeout(followUpTimeoutRef.current)
+                followUpTimeoutRef.current = setTimeout(() => {
+                    followUpModeRef.current = false
+                    setStatusText(WAITING)
+                }, FOLLOWUP_TIMEOUT_MS)
             }
         }
 
@@ -395,7 +426,7 @@ export default function VoiceApp() {
             <VoiceAvatar style={circleStyle} loading={loading} thinkText={thinkText} />
 
             <VoiceStatusDetails
-                wakePhrase={WAKE_PHRASE}
+                wakePhrase={t("wakePhrase")}
                 statusText={statusText}
                 awaitingCommand={awaitingCommand}
                 lastHeard={lastHeard}

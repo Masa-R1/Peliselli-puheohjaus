@@ -7,8 +7,9 @@ import VoiceInput from "./VoiceInput"
 import ReactMarkdown from "react-markdown"
 import { getSpeechText } from "../utils/speechText"
 import "../app.css"
+import { useTranslation } from "react-i18next";
 
-function Input({ language }) {
+function Input() {
     const { loading, setLoading, voiceEnabled, setVoiceEnabled, setIsSpeaking } = useStateStore()
 
     const { inputMessage, setInputMessage, messages, addMessages } = useMessageStore()
@@ -16,6 +17,8 @@ function Input({ language }) {
     const { conversationMessages, addConversationMessages } = useConversationStore()
 
     const { selectedModel } = useModelStore()
+
+    const { i18n } = useTranslation();
 
     const chatboxId = useId()
 
@@ -33,33 +36,6 @@ function Input({ language }) {
             return !prev
         })
     }
-
-    // const checkMessage = (aiAnswer) => {
-    //     const settingKeywords = ["changing", "switching", "making", "switch", "switched", "change", "make", "adjust", "adjusted", "adjusting", "set", "shifting", "update", "updating", "set", "setting"]
-
-    //     const colorKeywords = ["red", "green", "blue", "yellow", "purple"]
-
-    //     aiAnswer = aiAnswer.toLowerCase().split(" ")
-
-    //     const overlap = settingKeywords.some(item => aiAnswer.includes(item))
-
-    //     if (overlap) {
-    //         const findColor = colorKeywords.find(value => aiAnswer.includes(value))
-
-    //         if (findColor !== undefined) {
-    //             switch (findColor) {
-    //                 case "red":
-    //                     console.log(findColor)
-    //                     break;
-    //                 case "green":
-    //                     console.log(findColor)
-    //                     break;
-    //                 default:
-    //                     break;
-    //             }
-    //         }
-    //     }
-    // }
 
     async function sendMessage() {
         const message = inputMessage.trim()
@@ -116,7 +92,7 @@ function Input({ language }) {
 
         const utterance = new SpeechSynthesisUtterance(getSpeechText(text))
 
-        utterance.lang = language
+        utterance.lang = i18n.language;
         utterance.rate = 1
         utterance.pitch = 1
         utterance.volume = 1

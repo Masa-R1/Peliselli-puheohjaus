@@ -1,24 +1,19 @@
 import { create } from "zustand"
+import i18n from "../i18n"
 
 const useMessageStore = create((set) => {
-    async function loadSystemMessage() {
-        try {
-            const res = await fetch("/config.json")
-            if (!res.ok) return
-            const cfg = await res.json()
-            const sys = cfg?.systemMessage ?? cfg?.system?.message ?? cfg?.system ?? ""
-            const content = typeof sys === "string" ? sys : (sys?.message ?? "")
-            if (content) {
-                set(() => ({ messages: [{ role: "system", content }] }))
-            }
-        } catch (err) {
-            // fail silently; app still works without system message
-            console.error("useMessageStore: failed to load config.json", err)
+    function loadSystemMessage() {
+        const systemMessage = i18n.t("systemMessage")
+        if (systemMessage) {
+            set(() => ({ messages: [{ role: "system", content: systemMessage }] }))
         }
     }
 
-    // start async load (non-blocking)
+    // load initial system message
     loadSystemMessage()
+
+    // reload on language change
+    i18n.on("languageChanged", loadSystemMessage)
 
     return {
         messages: [],

@@ -2,9 +2,11 @@ import logo from "../assets/samk-bubble.png";
 import ModelSelect from "./ModelSelect";
 import { useStateStore } from "../stores/useStateStore";
 import "../voiceIndicator.css"
+import { useTranslation } from "react-i18next";
 
-function Header({ language, setLanguage }) {
+function Header() {
     const { isSpeaking } = useStateStore();
+    const { i18n } = useTranslation();
 
     return (
         <header className="chat-header">
@@ -31,8 +33,8 @@ function Header({ language, setLanguage }) {
                         Language:
 
                         <select
-                            value={language}
-                            onChange={(e) => setLanguage(e.target.value)}
+                            value={i18n.language}
+                            onChange={(e) => i18n.changeLanguage(e.target.value)}
                             style={{
                                 background: "transparent",
                                 border: "none",
@@ -41,14 +43,14 @@ function Header({ language, setLanguage }) {
                                 fontSize: "14px"
                             }}
                         >
-                            <option value="en-US">EN</option>
-                            <option value="fi-FI">FI</option>
+                            <option value="en">EN</option>
+                            <option value="fi">FI</option>
                         </select>
                     </label>
                 </div>
 
                 <div className="speaking-indicator">
-                    <div className={`glow-ball ${isSpeaking ? 'active' : 'inactive'}`}></div>
+                    <div className={glow-ball }></div>
                 </div>
 
             </div>
