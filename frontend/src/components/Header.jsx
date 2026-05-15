@@ -49,9 +49,9 @@ function Header() {
                     </label>
                 </div>
 
-                <div className="speaking-indicator">
+                {/* <div className="speaking-indicator">
                     <div className={glow-ball }></div>
-                </div>
+                </div> */}
 
             </div>
         </header>
