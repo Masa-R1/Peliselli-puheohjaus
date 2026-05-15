@@ -48,8 +48,7 @@ class ModelManager:
         self.__load_models_and_set_default()
 
         if not self.selected_model_name or len(self.selected_model_name) < 1:
-            subprocess.run(['ollama', 'pull', 'gpt-3.5-turbo']) 
-            self.__load_models_and_set_default()
+            raise RuntimeError("No Ollama models found. Please add a model and restart the application.")
 
     def _load_models(self) -> dict[str, ChatOllama]:
         models = {}
