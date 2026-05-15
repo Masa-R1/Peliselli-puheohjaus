@@ -349,7 +349,15 @@ export default function VoiceApp() {
             setStatusText(WAITING)
         } finally {
             setLoading(false)
-            // do not restart recognition here; `speak` will restart and manage follow-up mode
+            // If backend fails, `speak` is never called, so restore recognition here.
+            if (listeningEnabledRef.current && !speakingRef.current) {
+                followUpModeRef.current = false
+                if (followUpTimeoutRef.current) {
+                    clearTimeout(followUpTimeoutRef.current)
+                    followUpTimeoutRef.current = null
+                }
+                startRecognition()
+            }
         }
     }
 
