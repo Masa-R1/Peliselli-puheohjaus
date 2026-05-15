@@ -1,12 +1,13 @@
-
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useStateStore } from "./stores/useStateStore"
 import { useMessageStore } from "./stores/useMessageStore"
 import { useConversationStore } from "./stores/useConversationStore"
+import { useModelStore } from "./stores/useModelStore"
 import VoiceAvatar from "./components/VoiceAvatar"
 import VoiceStatusDetails from "./components/VoiceStatusDetails"
 import VoiceToggleListeningButton from "./components/VoiceToggleListeningButton"
+import ModelSelect from "./components/ModelSelect"
 import { getSpeechText } from "./utils/speechText"
 import { apiUrl } from "./utils/api"
 
@@ -55,6 +56,7 @@ export default function VoiceApp() {
     const { loading, voiceEnabled, setLoading, setListening, haListening, setHaListening } = useStateStore()
     const { messages, addMessages } = useMessageStore()
     const { addConversationMessages } = useConversationStore()
+    const { models, selectedModel } = useModelStore()
 
     const [wakeListeningEnabled, setWakeListeningEnabled] = useState(true)
     const [awaitingCommand, setAwaitingCommand] = useState(false)
@@ -262,7 +264,7 @@ export default function VoiceApp() {
             recognitionRef.current = null
             window.speechSynthesis.cancel()
         }
-    }, [])
+    }, [selectedModel])
 
     // Hakee kuuntelun tilan
     useEffect(() => {
@@ -324,7 +326,7 @@ export default function VoiceApp() {
 
         try {
             const promptInfo = {
-                model: "gemma3:latest",
+                model: selectedModel,
                 prompt: message,
                 history: messagesRef.current,
             }
@@ -423,6 +425,8 @@ export default function VoiceApp() {
             }}
         >
             <h1 style={{ margin: 0, fontSize: "1.15rem" }}>Voice Assistant</h1>
+
+            <ModelSelect />
 
             <VoiceAvatar style={circleStyle} loading={loading} thinkText={thinkText} />
 
