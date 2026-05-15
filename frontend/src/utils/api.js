@@ -1,4 +1,4 @@
-const backendUrl = import.meta.env.VITE_BACKEND_URL || "localhost:8000"
+const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000"
 
 export function apiUrl(path) {
     if (!backendUrl) {
