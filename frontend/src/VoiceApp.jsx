@@ -71,6 +71,7 @@ export default function VoiceApp() {
         [t]
     )
 
+    //#region Refs
     const recognitionRef = useRef(null)
     const restartTimeoutRef = useRef(null)
     const thinkIntervalRef = useRef(null)
@@ -84,6 +85,7 @@ export default function VoiceApp() {
     const followUpTimeoutRef = useRef(null)
     const thinkPhraseRef = useRef("")
     const thinkIndexRef = useRef(0)
+    //#endregion
 
     useEffect(() => {
         messagesRef.current = messages
@@ -265,7 +267,7 @@ export default function VoiceApp() {
             recognitionRef.current = null
             window.speechSynthesis.cancel()
         }
-    }, [selectedModel])
+    }, [selectedModel, i18n.language])
 
     // Hakee kuuntelun tilan
     useEffect(() => {
@@ -372,6 +374,13 @@ export default function VoiceApp() {
 
         const utterance = new SpeechSynthesisUtterance(getSpeechText(text))
         utterance.lang = i18n.language
+        try {
+            const voices = window.speechSynthesis.getVoices()
+            if (voices && voices.length) {
+                const match = voices.find(v => v.lang && v.lang.startsWith(i18n.language)) || voices.find(v => v.lang && v.lang.startsWith(i18n.language.split('-')[0]))
+                if (match) utterance.voice = match
+            }
+        } catch (e) {}
         utterance.rate = 1
         utterance.pitch = 1
         utterance.volume = 1
