@@ -8,17 +8,17 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
-    server: {
-      proxy: {
-        '/chat': {
-          target: backendUrl,
-          changeOrigin: true,
-        },
-        '/voice': {
-          target: backendUrl,
-          changeOrigin: true,
-        },
-      },
-    },
+    // server: {
+    //   proxy: {
+    //     '/chat': {
+    //       target: backendUrl,
+    //       changeOrigin: true,
+    //     },
+    //     '/voice': {
+    //       target: backendUrl,
+    //       changeOrigin: true,
+    //     },
+    //   },
+    // },
   }
 })
