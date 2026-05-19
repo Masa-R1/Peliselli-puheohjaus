@@ -8,6 +8,7 @@ from urllib.error import URLError
 from urllib.request import urlopen
 from langchain.tools import tool
 from langchain.chat_models import init_chat_model, BaseChatModel
+from langchain.schema import HumanMessage, AIMessage
 
 # Toolit
 @tool
@@ -143,10 +144,19 @@ def dynamic_model_selection(request: ModelRequest, handler) -> ModelResponse:
 def invoke_agent(prompt: str, history: Optional[list[dict[str,str]]] = None) -> dict[str,str]:
     messages = history[:] if history else []
     messages.append({"role": "user", "content": prompt})
-    result = model_manager.selected_model.invoke({"messages": messages})
+    
+    # Convert dict messages to LangChain message objects
+    message_objects = []
+    for msg in messages:
+        if msg["role"] == "user":
+            message_objects.append(HumanMessage(content=msg["content"]))
+        else:
+            message_objects.append(AIMessage(content=msg["content"]))
+    
+    result = model_manager.selected_model.invoke(message_objects)
 
     try:
-        answer = result["messages"][-1].content_blocks[-1]["text"]
+        answer = result.content
         return {"role": "assistant", "content": answer}
     except:
         return {"role": "assistant", "content": "Error: No response from model."}
