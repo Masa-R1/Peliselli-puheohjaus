@@ -148,12 +148,13 @@ def invoke_agent(prompt: str, history: Optional[list[dict[str,str]]] = None) -> 
     # Convert dict messages to LangChain message objects
     message_objects = []
     for msg in messages:
-        if msg["role"] == "user":
-            message_objects.append(HumanMessage(content=msg["content"]))
-        elif msg["role"] == "system":
-            message_objects.append(SystemMessage(content=msg["content"]))
-        else:
-            message_objects.append(AIMessage(content=msg["content"]))
+        match msg["role"]:
+            case "assistant":
+                message_objects.append(AIMessage(content=msg["content"]))
+            case "system":
+                message_objects.append(SystemMessage(content=msg["content"]))
+            case _:
+                message_objects.append(HumanMessage(content=msg["content"]))
     
     result = model_manager.selected_model.invoke(message_objects)
 
