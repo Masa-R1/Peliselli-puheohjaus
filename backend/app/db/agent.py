@@ -18,15 +18,15 @@ def change_light_color(color: str) -> str:
     return f"Changed light color to {color}."
 
 @tool
-def get_model_information(model_name: Optional[str] = None) -> str:
-    """Tool to get information about available models.
+def get_model_information(model_name: str) -> str:
+    """Tool to get information about you and other available models.
     
     Args:        
-        model_name (Optional[str]): If provided, returns information about the specified model. 
-                                    If not provided, returns information about all available models.
+        model_name: If not empty, returns information about the specified model. 
+                    If empty, returns information about all available models.
     """
 
-    if model_name is None:
+    if model_name is None or model_name == "":
         data = str()
         for model_name in model_manager.get_model_names():
             data += subprocess.run(
