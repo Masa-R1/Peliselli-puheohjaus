@@ -1,3 +1,4 @@
+import httpx
 from langchain_ollama import ChatOllama
 from langchain.agents import create_agent
 from langchain.agents.middleware import wrap_model_call, ModelRequest, ModelResponse
@@ -57,7 +58,12 @@ class ModelManager:
             parts = line.split()
             if parts:
                 name = parts[0]
-                models[name] = ChatOllama(model=name, timeout=AGENT_TIMEOUT)
+                models[name] = ChatOllama(
+                    model=name,  
+                    client_kwargs={
+                        "timeout": httpx.Timeout(AGENT_TIMEOUT)
+                    }
+                )
 
         return models
 
