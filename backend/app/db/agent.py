@@ -1,5 +1,4 @@
 import httpx
-from langchain.agents import create_agent
 from langchain.agents.middleware import wrap_model_call, ModelRequest, ModelResponse
 from typing import Optional
 import subprocess
@@ -9,7 +8,6 @@ from urllib.request import urlopen
 from langchain.tools import tool
 from langchain.chat_models import init_chat_model, BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-
 # Toolit
 @tool
 def change_light_color(color: str) -> str:
@@ -44,6 +42,8 @@ def get_model_information(model_name: str) -> str:
         ['ollama', 'show', model_name],
         stdout=subprocess.PIPE
     ).stdout.decode('utf-8')         
+
+TOOLS = [change_light_color, get_model_information]
 
 class ModelManager:
     def __load_models_and_set_default(self): 
@@ -103,8 +103,7 @@ class ModelManager:
                     ),
                     max_retries=0
                 )
-                model.bind_tools([change_light_color, get_model_information])
-                models[name] = model
+                models[name] = model.bind_tools(TOOLS)
 
         return models
 
