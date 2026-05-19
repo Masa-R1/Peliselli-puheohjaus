@@ -26,7 +26,7 @@ class ModelManager:
                     if response.status == 200:
                         return
             except URLError:
-                pass    
+                pass
             except TimeoutError:
                 time.sleep(0.5)
 
