@@ -129,7 +129,7 @@ def dynamic_model_selection(request: ModelRequest, handler) -> ModelResponse:
 agent = create_agent(
     model=model_manager.selected_model,
     middleware=[dynamic_model_selection],
-    tools=[change_light_color]
+    tools=[change_light_color, get_model_information]
 )
 
 
