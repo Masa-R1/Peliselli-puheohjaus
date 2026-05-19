@@ -8,7 +8,7 @@ from urllib.error import URLError
 from urllib.request import urlopen
 from langchain.tools import tool
 from langchain.chat_models import init_chat_model, BaseChatModel
-from langchain.schema import HumanMessage, AIMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 # Toolit
 @tool
