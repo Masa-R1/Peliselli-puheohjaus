@@ -12,10 +12,33 @@ from langchain.tools import tool
 
 # Testi tool
 @tool
-def change_Light_Color(color: str) -> str:
+def change_light_color(color: str) -> str:
     """Tool to change the light color in Home Assistant."""
     print(color)
     return f"Changed light color to {color}."
+
+@tool
+def get_model_information(model_name: Optional[str] = None) -> str:
+    """Tool to get information about available models.
+    
+    Args:        
+        model_name (Optional[str]): If provided, returns information about the specified model. 
+                                    If not provided, returns information about all available models.
+    """
+
+    if model_name is None:
+        data = str()
+        for model_name in model_manager.get_model_names():
+            data += subprocess.run(
+                ['ollama', 'show', model_name],
+                stdout=subprocess.PIPE
+            ).stdout.decode('utf-8')
+        return data
+    else:
+        return subprocess.run(
+            ['ollama', 'show', model_name],
+            stdout=subprocess.PIPE
+        ).stdout.decode('utf-8')
 
 class ModelManager:
     def __load_models_and_set_default(self): 
@@ -106,7 +129,7 @@ def dynamic_model_selection(request: ModelRequest, handler) -> ModelResponse:
 agent = create_agent(
     model=model_manager.selected_model,
     middleware=[dynamic_model_selection],
-    tools=[change_Light_Color]
+    tools=[change_light_color]
 )
 
 
