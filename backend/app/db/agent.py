@@ -1,7 +1,6 @@
 from langchain_ollama import ChatOllama
 from langchain.agents import create_agent
 from langchain.agents.middleware import wrap_model_call, ModelRequest, ModelResponse
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from typing import Optional
 import subprocess
 import time
@@ -9,8 +8,7 @@ from urllib.error import URLError
 from urllib.request import urlopen
 from langchain.tools import tool
 
-MODEL_RESPONSE_TIMEOUT_SECONDS = 60
-MODEL_RESPONSE_TIMEOUT_REPLY = "Error: Model response timed out. Please try again."
+AGENT_TIMEOUT = 60
 
 class ModelManager:
     def __load_models_and_set_default(self): 
@@ -59,7 +57,7 @@ class ModelManager:
             parts = line.split()
             if parts:
                 name = parts[0]
-                models[name] = ChatOllama(model=name)
+                models[name] = ChatOllama(model=name, timeout=AGENT_TIMEOUT)
 
         return models
 
@@ -141,15 +139,7 @@ agent = create_agent(
 def invoke_agent(prompt: str, history: Optional[list[dict[str,str]]] = None) -> dict[str,str]:
     messages = history[:] if history else []
     messages.append({"role": "user", "content": prompt})
-    executor = ThreadPoolExecutor(max_workers=1)
-    future = executor.submit(agent.invoke, {"messages": messages})
-
-    try:
-        result = future.result(timeout=MODEL_RESPONSE_TIMEOUT_SECONDS)
-    except FuturesTimeoutError:
-        return {"role": "assistant", "content": MODEL_RESPONSE_TIMEOUT_REPLY}
-    finally:
-        executor.shutdown(wait=False, cancel_futures=True)
+    result = agent.invoke({"messages": messages})
 
     try:
         answer = result["messages"][-1].content_blocks[-1]["text"]
