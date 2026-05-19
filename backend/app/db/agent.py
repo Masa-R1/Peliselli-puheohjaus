@@ -1,12 +1,16 @@
 from langchain_ollama import ChatOllama
 from langchain.agents import create_agent
 from langchain.agents.middleware import wrap_model_call, ModelRequest, ModelResponse
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from typing import Optional
 import subprocess
 import time
 from urllib.error import URLError
 from urllib.request import urlopen
 from langchain.tools import tool
+
+MODEL_RESPONSE_TIMEOUT_SECONDS = 60
+MODEL_RESPONSE_TIMEOUT_REPLY = "Error: Model response timed out. Please try again."
 
 class ModelManager:
     def __load_models_and_set_default(self): 
@@ -110,7 +114,6 @@ def get_model_information(model_name: str) -> str:
                     If empty, returns information about all available models.
     """
 
-
     if model_name is None or model_name == "":
         data = str()
         for model_name in model_manager.get_model_names():
@@ -119,28 +122,34 @@ def get_model_information(model_name: str) -> str:
                 stdout=subprocess.PIPE
             ).stdout.decode('utf-8')
         return data
-    elif model_name.lower() == "current":
-        return subprocess.run(
-            ['ollama', 'show', model_manager.selected_model_name],
-            stdout=subprocess.PIPE
-        ).stdout.decode('utf-8')
-    else:   
-        return subprocess.run(
-            ['ollama', 'show', model_name],
-            stdout=subprocess.PIPE
-        ).stdout.decode('utf-8')
+    
+    if model_name.lower() == "current":
+        model_name = model_manager.selected_model_name  
+
+    return subprocess.run(
+        ['ollama', 'show', model_name],
+        stdout=subprocess.PIPE
+    ).stdout.decode('utf-8')         
 
 agent = create_agent(
     model=model_manager.selected_model,
     middleware=[dynamic_model_selection],
-    tools=[change_light_color, get_model_information]
+    tools=[change_light_color, get_model_information],
 )
 
 
 def invoke_agent(prompt: str, history: Optional[list[dict[str,str]]] = None) -> dict[str,str]:
     messages = history[:] if history else []
     messages.append({"role": "user", "content": prompt})
-    result = agent.invoke({"messages": messages})
+    executor = ThreadPoolExecutor(max_workers=1)
+    future = executor.submit(agent.invoke, {"messages": messages})
+
+    try:
+        result = future.result(timeout=MODEL_RESPONSE_TIMEOUT_SECONDS)
+    except FuturesTimeoutError:
+        return {"role": "assistant", "content": MODEL_RESPONSE_TIMEOUT_REPLY}
+    finally:
+        executor.shutdown(wait=False, cancel_futures=True)
 
     try:
         answer = result["messages"][-1].content_blocks[-1]["text"]
