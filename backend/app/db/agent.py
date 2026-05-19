@@ -150,6 +150,8 @@ def invoke_agent(prompt: str, history: Optional[list[dict[str,str]]] = None) -> 
     for msg in messages:
         if msg["role"] == "user":
             message_objects.append(HumanMessage(content=msg["content"]))
+        elif msg["role"] == "system":
+            message_objects.append(SystemMessage(content=msg["content"]))
         else:
             message_objects.append(AIMessage(content=msg["content"]))
     
