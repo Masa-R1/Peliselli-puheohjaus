@@ -1,12 +1,14 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useModelStore } from "../stores/useModelStore";
 import { apiUrl } from "../utils/api";
 
 function ModelSelect() {
-    const { models } = useModelStore()
-    const { setModels } = useModelStore()
-    const { setSelectedModel } = useModelStore()
-    const { selectedModel } = useModelStore()
+    const { 
+        models, 
+        setModels, 
+        setSelectedModel, 
+        selectedModel 
+    } = useModelStore()
 
     useEffect(() => {
         fetch(apiUrl("/chat"))
@@ -28,7 +30,6 @@ function ModelSelect() {
                 id="select-model"
                 onChange={(e) => {
                     setSelectedModel(e.target.value)
-                    console.log(selectedModel)
                 }}
                 style={{
                     background:"transparent",
