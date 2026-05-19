@@ -6,17 +6,17 @@ import { useEffect, useState } from "react"
 import { useStateStore } from "./stores/useStateStore"
 
 function ChatbotApp() {
-        const [ listeningState, setListeningState ] = useState(false)
+	const [ listeningState, setListeningState ] = useState(false)
 
-        return (
-        <div className="container">
-                        <Header />
+	return (
+		<div className="container">
+			<Header />
 
-                <Chat />
+			<Chat />
 
-                <Input />
-        </div>
-        )
+			<Input />
+		</div>
+	)
 }
 
 export default ChatbotApp

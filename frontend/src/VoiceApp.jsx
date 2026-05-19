@@ -1,16 +1,19 @@
-
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useStateStore } from "./stores/useStateStore"
 import { useMessageStore } from "./stores/useMessageStore"
 import { useConversationStore } from "./stores/useConversationStore"
+import { useModelStore } from "./stores/useModelStore"
 import VoiceAvatar from "./components/VoiceAvatar"
 import VoiceStatusDetails from "./components/VoiceStatusDetails"
 import VoiceToggleListeningButton from "./components/VoiceToggleListeningButton"
+import ModelSelect from "./components/ModelSelect"
 import { getSpeechText } from "./utils/speechText"
+import { apiUrl } from "./utils/api"
 
 import useSound from 'use-sound'
 import notifySound from "./assets/sound/278142__ricemaster__effect_notify.wav"
+import LanguageSelect from "./components/LanguageSelector"
 const WAITING = "Awaiting activation..."
 const THINK_PHRASES = ["Thinking...", "Calculating...", "Pondering...", "Analyzing...", "Reflecting...", "Generating slop..."]
 const FOLLOWUP_TIMEOUT_MS = 20000
@@ -54,6 +57,7 @@ export default function VoiceApp() {
     const { loading, voiceEnabled, setLoading, setListening, haListening, setHaListening } = useStateStore()
     const { messages, addMessages } = useMessageStore()
     const { addConversationMessages } = useConversationStore()
+    const { models, selectedModel } = useModelStore()
 
     const [wakeListeningEnabled, setWakeListeningEnabled] = useState(true)
     const [awaitingCommand, setAwaitingCommand] = useState(false)
@@ -67,6 +71,7 @@ export default function VoiceApp() {
         [t]
     )
 
+    //#region Refs
     const recognitionRef = useRef(null)
     const restartTimeoutRef = useRef(null)
     const thinkIntervalRef = useRef(null)
@@ -80,6 +85,7 @@ export default function VoiceApp() {
     const followUpTimeoutRef = useRef(null)
     const thinkPhraseRef = useRef("")
     const thinkIndexRef = useRef(0)
+    //#endregion
 
     useEffect(() => {
         messagesRef.current = messages
@@ -261,13 +267,13 @@ export default function VoiceApp() {
             recognitionRef.current = null
             window.speechSynthesis.cancel()
         }
-    }, [])
+    }, [selectedModel, i18n.language])
 
     // Hakee kuuntelun tilan
     useEffect(() => {
         const interval = setInterval(async () => {
             try {
-                const res = await fetch("http://localhost:8000/voice")
+                const res = await fetch(apiUrl("/voice"))
                 const data = await res.json()
                 setHaListening(data.enabled)
                 if (!data.enabled) {
@@ -323,12 +329,12 @@ export default function VoiceApp() {
 
         try {
             const promptInfo = {
-                model: "gemma3:latest",
+                model: selectedModel,
                 prompt: message,
                 history: messagesRef.current,
             }
 
-            const response = await fetch("http://localhost:8000/chat", {
+            const response = await fetch(apiUrl("/chat"), {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -348,7 +354,15 @@ export default function VoiceApp() {
             setStatusText(WAITING)
         } finally {
             setLoading(false)
-            // do not restart recognition here; `speak` will restart and manage follow-up mode
+            // If backend fails, `speak` is never called, so restore recognition here.
+            if (listeningEnabledRef.current && !speakingRef.current) {
+                followUpModeRef.current = false
+                if (followUpTimeoutRef.current) {
+                    clearTimeout(followUpTimeoutRef.current)
+                    followUpTimeoutRef.current = null
+                }
+                startRecognition()
+            }
         }
     }
 
@@ -360,6 +374,13 @@ export default function VoiceApp() {
 
         const utterance = new SpeechSynthesisUtterance(getSpeechText(text))
         utterance.lang = i18n.language
+        try {
+            const voices = window.speechSynthesis.getVoices()
+            if (voices && voices.length) {
+                const match = voices.find(v => v.lang && v.lang.startsWith(i18n.language)) || voices.find(v => v.lang && v.lang.startsWith(i18n.language.split('-')[0]))
+                if (match) utterance.voice = match
+            }
+        } catch (e) {}
         utterance.rate = 1
         utterance.pitch = 1
         utterance.volume = 1
@@ -422,6 +443,10 @@ export default function VoiceApp() {
             }}
         >
             <h1 style={{ margin: 0, fontSize: "1.15rem" }}>Voice Assistant</h1>
+
+            <LanguageSelect />
+
+            <ModelSelect />
 
             <VoiceAvatar style={circleStyle} loading={loading} thinkText={thinkText} />
 

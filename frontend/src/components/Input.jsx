@@ -6,6 +6,7 @@ import { useModelStore } from "../stores/useModelStore"
 import VoiceInput from "./VoiceInput"
 import ReactMarkdown from "react-markdown"
 import { getSpeechText } from "../utils/speechText"
+import { apiUrl } from "../utils/api"
 import "../app.css"
 import { useTranslation } from "react-i18next";
 
@@ -62,7 +63,7 @@ function Input() {
 
         let reply = ""
 
-        fetch("http://localhost:8000/chat", {
+        fetch(apiUrl("/chat"), {
             method: "POST",
             headers: {
                 "Content-Type": "Application/JSON",
@@ -93,6 +94,14 @@ function Input() {
         const utterance = new SpeechSynthesisUtterance(getSpeechText(text))
 
         utterance.lang = i18n.language;
+        // choose a matching voice for the selected language if available
+        try {
+            const voices = window.speechSynthesis.getVoices()
+            if (voices && voices.length) {
+                const match = voices.find(v => v.lang && v.lang.startsWith(i18n.language)) || voices.find(v => v.lang && v.lang.startsWith(i18n.language.split('-')[0]))
+                if (match) utterance.voice = match
+            }
+        } catch (e) {}
         utterance.rate = 1
         utterance.pitch = 1
         utterance.volume = 1
@@ -115,7 +124,7 @@ function Input() {
     return (
         <div className="input-area">
             {/* Voice Input */}
-            <VoiceInput />
+            <VoiceInput language={i18n.language} />
             
             {/* Text input */}
 

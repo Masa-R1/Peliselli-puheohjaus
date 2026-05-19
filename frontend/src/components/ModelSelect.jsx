@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useModelStore } from "../stores/useModelStore";
+import { apiUrl } from "../utils/api";
 
 function ModelSelect() {
     const { models } = useModelStore()
@@ -8,7 +9,7 @@ function ModelSelect() {
     const { selectedModel } = useModelStore()
 
     useEffect(() => {
-		fetch("http://localhost:8000/chat")
+        fetch(apiUrl("/chat"))
 		.then((respose) => respose.json())
 		.then(data => {
 			setModels(data)

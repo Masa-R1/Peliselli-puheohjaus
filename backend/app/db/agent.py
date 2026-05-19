@@ -8,15 +8,6 @@ from urllib.error import URLError
 from urllib.request import urlopen
 from langchain.tools import tool
 
-
-
-# Testi tool
-# @tool
-# def change_Light_Color(color: str) -> str:
-#     """Tool to change the light color in Home Assistant."""
-#     print(color)
-#     return f"Changed light color to {color}."
-
 class ModelManager:
     def __load_models_and_set_default(self): 
         self.models = self._load_models()
@@ -48,8 +39,7 @@ class ModelManager:
         self.__load_models_and_set_default()
 
         if not self.selected_model_name or len(self.selected_model_name) < 1:
-            subprocess.run(['ollama', 'pull', 'gpt-3.5-turbo']) 
-            self.__load_models_and_set_default()
+            raise RuntimeError("No Ollama models found. Please add a model and restart the application.")
 
     def _load_models(self) -> dict[str, ChatOllama]:
         models = {}
@@ -97,17 +87,53 @@ class ModelManager:
 # Create a single manager instance
 model_manager = ModelManager()
 
-
 @wrap_model_call
 def dynamic_model_selection(request: ModelRequest, handler) -> ModelResponse:
     model_manager.refresh()
     return handler(request.override(model=model_manager.selected_model))
 
+# Toolit
+@tool
+def change_light_color(color: str) -> str:
+    """Tool to change the light color in Home Assistant."""
+    print(color)
+    return f"Changed light color to {color}."
+
+@tool
+def get_model_information(model_name: str) -> str:
+    """Tool to get information about you and other available models.
+    
+    Args:        
+        model_name: 
+                    If equal to "current", returns information about the currently selected model.
+                    Otherwise, if not empty, returns information about the specified model. 
+                    If empty, returns information about all available models.
+    """
+
+
+    if model_name is None or model_name == "":
+        data = str()
+        for model_name in model_manager.get_model_names():
+            data += subprocess.run(
+                ['ollama', 'show', model_name],
+                stdout=subprocess.PIPE
+            ).stdout.decode('utf-8')
+        return data
+    elif model_name.lower() == "current":
+        return subprocess.run(
+            ['ollama', 'show', model_manager.selected_model_name],
+            stdout=subprocess.PIPE
+        ).stdout.decode('utf-8')
+    else:   
+        return subprocess.run(
+            ['ollama', 'show', model_name],
+            stdout=subprocess.PIPE
+        ).stdout.decode('utf-8')
 
 agent = create_agent(
     model=model_manager.selected_model,
-    middleware=[dynamic_model_selection]
-    # tools=[change_Light_Color]
+    middleware=[dynamic_model_selection],
+    tools=[change_light_color, get_model_information]
 )
 
 
