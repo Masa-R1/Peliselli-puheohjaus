@@ -376,6 +376,7 @@ export default function VoiceApp() {
         utterance.lang = i18n.language
         try {
             const voices = window.speechSynthesis.getVoices()
+            console.log(voices)
             if (voices && voices.length) {
                 const match = voices.find(v => v.lang && v.lang.startsWith(i18n.language)) || voices.find(v => v.lang && v.lang.startsWith(i18n.language.split('-')[0]))
                 if (match) utterance.voice = match
