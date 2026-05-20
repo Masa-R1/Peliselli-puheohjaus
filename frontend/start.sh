@@ -45,4 +45,12 @@ done
 
 chrome_bin="$(find_chrome)"
 
+if [ -z "$chrome_bin" ]; then
+	echo "Chrome not found. Install Google Chrome or add it to PATH." >&2
+	exit 1
+fi
+
 "$chrome_bin" --enable-speech-dispatcher "$URL" >/dev/null 2>&1 &
+chrome_pid=$!
+
+wait "$chrome_pid"
