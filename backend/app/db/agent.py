@@ -96,10 +96,10 @@ class ModelManager:
                     model_provider="ollama",
                     model=name,
                     timeout=httpx.Timeout(
-                        connect=30.0,  # Connection timeout (like curl --connect-timeout)
-                        read=60.0,     # Time to wait for response data
-                        write=30.0,    # Time to wait for sending data
-                        pool=30.0      # Time to wait for connection from pool
+                        connect=60.0,  # Connection timeout (like curl --connect-timeout)
+                        read=120.0,     # Time to wait for response data
+                        write=60.0,    # Time to wait for sending data
+                        pool=60.0      # Time to wait for connection from pool
                     ),
                     max_retries=0
                 )
@@ -145,7 +145,8 @@ def invoke_agent(prompt: str, history: Optional[list[dict[str,str]]] = None) -> 
     messages.append({"role": "user", "content": prompt})
     
     # Convert dict messages to LangChain message objects
-    message_objects = []
+    message_objects = []    
+
     for msg in messages:
         match msg["role"]:
             case "assistant":
@@ -154,11 +155,9 @@ def invoke_agent(prompt: str, history: Optional[list[dict[str,str]]] = None) -> 
                 message_objects.append(SystemMessage(content=msg["content"]))
             case _:
                 message_objects.append(HumanMessage(content=msg["content"]))
-    
-    result = model_manager.selected_model.invoke(message_objects)
 
     try:
-        answer = result.content
-        return {"role": "assistant", "content": answer}
+        result = model_manager.selected_model.invoke(message_objects)
+        return {"role": "assistant", "content": result.content or "Error: No response from model."}
     except:
         return {"role": "assistant", "content": "Error: No response from model."}
