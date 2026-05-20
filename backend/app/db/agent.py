@@ -96,12 +96,11 @@ class ModelManager:
                     model_provider="ollama",
                     model=name,
                     timeout=httpx.Timeout(
-                        connect=60.0,  # Connection timeout (like curl --connect-timeout)
-                        read=120.0,     # Time to wait for response data
-                        write=60.0,    # Time to wait for sending data
-                        pool=60.0      # Time to wait for connection from pool
-                    ),
-                    max_retries=0
+                        connect=30.0,  # Connection timeout (like curl --connect-timeout)
+                        read=60.0,     # Time to wait for response data
+                        write=30.0,    # Time to wait for sending data
+                        pool=30.0      # Time to wait for connection from pool
+                    )
                 )
                 models[name] = model.bind_tools(TOOLS)
 
