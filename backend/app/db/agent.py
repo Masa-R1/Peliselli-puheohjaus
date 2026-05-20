@@ -140,6 +140,8 @@ def dynamic_model_selection(request: ModelRequest, handler) -> ModelResponse:
     model_manager.refresh()
     return handler(request.override(model=model_manager.selected_model))
 
+ERROR_NO_RESPONSE = "Error: No response from model."
+
 def invoke_agent(prompt: str, history: Optional[list[dict[str,str]]] = None) -> dict[str,str]:
     messages = history[:] if history else []
     messages.append({"role": "user", "content": prompt})
@@ -158,6 +160,45 @@ def invoke_agent(prompt: str, history: Optional[list[dict[str,str]]] = None) -> 
 
     try:
         result = model_manager.selected_model.invoke(message_objects)
-        return {"role": "assistant", "content": result.content or "Error: No response from model."}
-    except:
-        return {"role": "assistant", "content": "Error: No response from model."}
+
+        # Normalize various result shapes to a string response
+        content = ERROR_NO_RESPONSE
+
+        # plain string
+        if isinstance(result, str):
+            content = result
+        # LangChain-like object with .content attribute
+        elif hasattr(result, "content"):
+            content = getattr(result, "content") or ERROR_NO_RESPONSE
+        # list of strings or dicts [{...}] or [str,...]
+        elif isinstance(result, list):
+            parts: list[str] = []
+            for item in result:
+                if isinstance(item, str):
+                    parts.append(item)
+                elif isinstance(item, dict):
+                    for k in ("text", "content", "message"):
+                        if k in item and isinstance(item[k], str):
+                            parts.append(item[k])
+                            break
+            content = "\n".join(parts) if parts else ERROR_NO_RESPONSE
+        # dict with possible keys
+        elif isinstance(result, dict):
+            for k in ("content", "text", "message"):
+                if k in result and isinstance(result[k], str):
+                    content = result[k]
+                    break
+            else:
+                if "messages" in result and isinstance(result["messages"], list) and result["messages"]:
+                    last = result["messages"][-1]
+                    if isinstance(last, dict):
+                        for k in ("content", "text", "message"):
+                            if k in last and isinstance(last[k], str):
+                                content = last[k]
+                                break
+                    elif isinstance(last, str):
+                        content = last
+
+        return {"role": "assistant", "content": content}
+    except Exception:
+        return {"role": "assistant", "content": ERROR_NO_RESPONSE}
