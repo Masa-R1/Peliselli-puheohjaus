@@ -271,8 +271,12 @@ export default function VoiceApp() {
 
     // Hakee kuuntelun tilan
     useEffect(() => {
+        // Polling pauses when awaiting backend response (loading) or while TTS speaking
         const interval = setInterval(async () => {
             try {
+                // Skip polling while waiting for /chat or while TTS speaking
+                if (loadingRef.current || speakingRef.current) return
+
                 const res = await fetch(apiUrl("/voice"))
                 const data = await res.json()
                 setHaListening(data.enabled)
@@ -295,7 +299,7 @@ export default function VoiceApp() {
                 followUpTimeoutRef.current = null
             }
         }
-	})
+    }, [])
 
     function stopRecognition() {
         try {

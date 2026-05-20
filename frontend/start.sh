@@ -26,11 +26,25 @@ find_chrome() {
 	return 1
 }
 
-npm run dev &
+npm run dev >/dev/null 2>&1 &
 dev_pid=$!
 
 cleanup() {
+	# try graceful kill of main pid
 	kill "$dev_pid" >/dev/null 2>&1 || true
+
+	# try kill process group (if supported)
+	kill -TERM -"$dev_pid" >/dev/null 2>&1 || true
+
+	# kill child processes (pkill -P)
+	if command -v pkill >/dev/null 2>&1; then
+		pkill -P "$dev_pid" >/dev/null 2>&1 || true
+	fi
+
+	# Windows fallback: taskkill to kill tree
+	if command -v taskkill >/dev/null 2>&1; then
+		taskkill //PID "$dev_pid" //T //F >/dev/null 2>&1 || taskkill /PID "$dev_pid" /T /F >/dev/null 2>&1 || true
+	fi
 }
 
 trap cleanup EXIT
