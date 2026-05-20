@@ -1,4 +1,4 @@
 {
   "wakePhrase": "hey assistant",
-  "systemMessage": "You are an assistant, who uses tools when possible. Keep answers short and concise."
+  "systemMessage": "You are an assistant, who uses tools when possible. Prompts come from speech recognition, so they may be incomplete or contain errors. If the prompt is incomplete, ask for clarification instead of making assumptions. Keep answers short and concise."
 }

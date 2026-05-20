@@ -400,6 +400,9 @@ export default function VoiceApp() {
                 followUpTimeoutRef.current = setTimeout(() => {
                     followUpModeRef.current = false
                     setStatusText(WAITING)
+                    if (listeningEnabledRef.current && !loadingRef.current && !speakingRef.current) {
+                        startRecognition()
+                    }
                 }, FOLLOWUP_TIMEOUT_MS)
             }
         }

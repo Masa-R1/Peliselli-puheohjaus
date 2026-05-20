@@ -103,13 +103,15 @@ def dynamic_model_selection(request: ModelRequest, handler) -> ModelResponse:
 # Toolit
 @tool
 def change_light_color(color: str) -> str:
-    """English: Tool to change the light color in Home Assistant. Finnish: Työkalu, jolla voi vaihtaa valon väriä Home Assistantissa. Palauta aina väri Englanniksi."""
+    """English: Tool to change the light color in Home Assistant. 
+    Finnish: Työkalu, jolla voi vaihtaa valon väriä Home Assistantissa. Palauta aina väri Englanniksi."""
     print(color)
     return f"Changed light color to {color}."
 
 @tool
 def get_model_information(model_name: str) -> str:
-    """English: Tool to get information about you and other available models. Finnish: Työkalu, jolla voi hakea tietoja sinusta ja muista saatavilla olevista malleista.
+    """English: Tool to get information about you and other available models. 
+    Finnish: Työkalu, jolla voi hakea tietoja sinusta ja muista saatavilla olevista malleista.
     
     Args:        
         model_name: 
