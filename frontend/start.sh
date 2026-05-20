@@ -26,37 +26,6 @@ find_chrome() {
 	return 1
 }
 
-npm run dev >/dev/null 2>&1 &
-dev_pid=$!
-
-cleanup() {
-	# try graceful kill of main pid
-	kill "$dev_pid" >/dev/null 2>&1 || true
-
-	# try kill process group (if supported)
-	kill -TERM -"$dev_pid" >/dev/null 2>&1 || true
-
-	# kill child processes (pkill -P)
-	if command -v pkill >/dev/null 2>&1; then
-		pkill -P "$dev_pid" >/dev/null 2>&1 || true
-	fi
-
-	# Windows fallback: taskkill to kill tree
-	if command -v taskkill >/dev/null 2>&1; then
-		taskkill //PID "$dev_pid" //T //F >/dev/null 2>&1 || taskkill /PID "$dev_pid" /T /F >/dev/null 2>&1 || true
-	fi
-}
-
-trap cleanup EXIT
-
-for _ in {1..60}; do
-	if curl -fsS "$URL" >/dev/null 2>&1; then
-		break
-	fi
-
-	sleep 1
-done
-
 chrome_bin="$(find_chrome)"
 
 if [ -z "$chrome_bin" ]; then
@@ -64,7 +33,8 @@ if [ -z "$chrome_bin" ]; then
 	exit 1
 fi
 
+# Launch Chrome in background
 "$chrome_bin" --enable-speech-dispatcher "$URL" >/dev/null 2>&1 &
-chrome_pid=$!
 
-wait "$chrome_pid"
+# Run dev server in foreground (output visible in current window)
+npm run dev
