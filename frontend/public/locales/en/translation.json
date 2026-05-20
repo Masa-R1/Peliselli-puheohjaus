@@ -1,4 +1,4 @@
 {
   "wakePhrase": "hey assistant",
-  "systemMessage": "You are an assistant, who uses tools when possible"
+  "systemMessage": "You are an assistant, who uses tools when possible. Keep answers short and concise."
 }
