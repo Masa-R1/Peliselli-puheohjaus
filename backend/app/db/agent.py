@@ -102,11 +102,23 @@ def dynamic_model_selection(request: ModelRequest, handler) -> ModelResponse:
 
 # Toolit
 @tool
-def change_light_color(color: str) -> str:
+def change_ha_light_color(color: str) -> str:
     """English: Tool to change the light color in Home Assistant. 
-    Finnish: Työkalu, jolla voi vaihtaa valon väriä Home Assistantissa. Palauta aina väri Englanniksi."""
+    Finnish: Työkalu, jolla voi vaihtaa valon väriä Home Assistantissa. Palauta aina väri Englanniksi.
+    Args:
+        color: The name of the color to change to. Should be in English."""
     print(color)
     return f"Changed light color to {color}."
+
+@tool
+def change_ha_scene(scene: str) -> str:
+    """English: Tool to change the scene in Home Assistant. 
+    Finnish: Työkalu, jolla voi vaihtaa sceneä Home Assistantissa. Palauta aina scene Englanniksi.
+    
+    Args:
+        scene: The name of the scene to change to. Should be in English."""
+    print(scene)
+    return f"Changed scene to {scene}."
 
 @tool
 def get_model_information(model_name: str) -> str:
@@ -140,7 +152,7 @@ def get_model_information(model_name: str) -> str:
 agent = create_agent(
     model=model_manager.selected_model,
     middleware=[dynamic_model_selection],
-    tools=[change_light_color, get_model_information],
+    tools=[change_ha_light_color, change_ha_scene, get_model_information],
 )
 
 def invoke_agent(prompt: str, history: Optional[list[dict[str,str]]] = None) -> dict[str,str]:
