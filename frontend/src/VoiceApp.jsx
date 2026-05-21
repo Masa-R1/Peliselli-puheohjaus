@@ -8,7 +8,7 @@ import VoiceAvatar from "./components/VoiceAvatar"
 import VoiceStatusDetails from "./components/VoiceStatusDetails"
 import VoiceToggleListeningButton from "./components/VoiceToggleListeningButton"
 import ModelSelect from "./components/ModelSelect"
-import { getSpeechText } from "./utils/speechText"
+import { webSpeechTextToSpeech } from "./utils/textToSpeech"
 import { apiUrl } from "./utils/api"
 
 import useSound from 'use-sound'
@@ -271,8 +271,12 @@ export default function VoiceApp() {
 
     // Hakee kuuntelun tilan
     useEffect(() => {
+        // Polling pauses when awaiting backend response (loading) or while TTS speaking
         const interval = setInterval(async () => {
             try {
+                // Skip polling while waiting for /chat or while TTS speaking
+                if (loadingRef.current || speakingRef.current) return
+
                 const res = await fetch(apiUrl("/voice"))
                 const data = await res.json()
                 setHaListening(data.enabled)
@@ -295,7 +299,7 @@ export default function VoiceApp() {
                 followUpTimeoutRef.current = null
             }
         }
-	})
+    }, [])
 
     function stopRecognition() {
         try {
@@ -370,36 +374,33 @@ export default function VoiceApp() {
         if (!voiceEnabled) return
 
         speakingRef.current = true
-        window.speechSynthesis.cancel()
+        webSpeechTextToSpeech.cancel()
 
-        const utterance = new SpeechSynthesisUtterance(getSpeechText(text))
-        utterance.lang = i18n.language
-        try {
-            const voices = window.speechSynthesis.getVoices()
-            if (voices && voices.length) {
-                const match = voices.find(v => v.lang && v.lang.startsWith(i18n.language)) || voices.find(v => v.lang && v.lang.startsWith(i18n.language.split('-')[0]))
-                if (match) utterance.voice = match
-            }
-        } catch (e) {}
-        utterance.rate = 1
-        utterance.pitch = 1
-        utterance.volume = 1
-
-        utterance.onend = () => {
-            speakingRef.current = false
-            if (listeningEnabledRef.current && !loadingRef.current) {
-                // restart recognition and open follow-up window
-                startRecognition()
-                followUpModeRef.current = true
-                if (followUpTimeoutRef.current) clearTimeout(followUpTimeoutRef.current)
-                followUpTimeoutRef.current = setTimeout(() => {
-                    followUpModeRef.current = false
-                    setStatusText(WAITING)
-                }, FOLLOWUP_TIMEOUT_MS)
-            }
-        }
-
-        window.speechSynthesis.speak(utterance)
+        webSpeechTextToSpeech.speak(text, {
+            language: i18n.language,
+            onEnd: () => {
+                speakingRef.current = false
+                if (listeningEnabledRef.current && !loadingRef.current) {
+                    // restart recognition and open follow-up window
+                    startRecognition()
+                    followUpModeRef.current = true
+                    if (followUpTimeoutRef.current) clearTimeout(followUpTimeoutRef.current)
+                    followUpTimeoutRef.current = setTimeout(() => {
+                        followUpModeRef.current = false
+                        setStatusText(WAITING)
+                        if (listeningEnabledRef.current && !loadingRef.current && !speakingRef.current) {
+                            startRecognition()
+                        }
+                    }, FOLLOWUP_TIMEOUT_MS)
+                }
+            },
+            onError: () => {
+                speakingRef.current = false
+                if (listeningEnabledRef.current && !loadingRef.current) {
+                    startRecognition()
+                }
+            },
+        })
     }
 
     const circleStyle = useMemo(() => {

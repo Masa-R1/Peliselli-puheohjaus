@@ -1,3 +1,4 @@
+import httpx
 from langchain_ollama import ChatOllama
 from langchain.agents import create_agent
 from langchain.agents.middleware import wrap_model_call, ModelRequest, ModelResponse
@@ -7,6 +8,8 @@ import time
 from urllib.error import URLError
 from urllib.request import urlopen
 from langchain.tools import tool
+
+AGENT_TIMEOUT = 60
 
 class ModelManager:
     def __load_models_and_set_default(self): 
@@ -22,7 +25,7 @@ class ModelManager:
                     if response.status == 200:
                         return
             except URLError:
-                pass    
+                pass
             except TimeoutError:
                 time.sleep(0.5)
 
@@ -55,7 +58,12 @@ class ModelManager:
             parts = line.split()
             if parts:
                 name = parts[0]
-                models[name] = ChatOllama(model=name)
+                models[name] = ChatOllama(
+                    model=name,  
+                    client_kwargs={
+                        "timeout": httpx.Timeout(AGENT_TIMEOUT)
+                    }
+                )
 
         return models
 
@@ -94,14 +102,28 @@ def dynamic_model_selection(request: ModelRequest, handler) -> ModelResponse:
 
 # Toolit
 @tool
-def change_light_color(color: str) -> str:
-    """Tool to change the light color in Home Assistant."""
+def change_ha_light_color(color: str) -> str:
+    """English: Tool to change the light color in Home Assistant. 
+    Finnish: Työkalu, jolla voi vaihtaa valon väriä Home Assistantissa. Palauta aina väri Englanniksi.
+    Args:
+        color: The name of the color to change to. Should be in English."""
     print(color)
     return f"Changed light color to {color}."
 
 @tool
+def change_ha_scene(scene: str) -> str:
+    """English: Tool to change the scene in Home Assistant. 
+    Finnish: Työkalu, jolla voi vaihtaa sceneä Home Assistantissa. Palauta aina scene Englanniksi.
+    
+    Args:
+        scene: The name of the scene to change to. Should be in English."""
+    print(scene)
+    return f"Changed scene to {scene}."
+
+@tool
 def get_model_information(model_name: str) -> str:
-    """Tool to get information about you and other available models.
+    """English: Tool to get information about you and other available models. 
+    Finnish: Työkalu, jolla voi hakea tietoja sinusta ja muista saatavilla olevista malleista.
     
     Args:        
         model_name: 
@@ -109,7 +131,6 @@ def get_model_information(model_name: str) -> str:
                     Otherwise, if not empty, returns information about the specified model. 
                     If empty, returns information about all available models.
     """
-
 
     if model_name is None or model_name == "":
         data = str()
@@ -119,23 +140,20 @@ def get_model_information(model_name: str) -> str:
                 stdout=subprocess.PIPE
             ).stdout.decode('utf-8')
         return data
-    elif model_name.lower() == "current":
-        return subprocess.run(
-            ['ollama', 'show', model_manager.selected_model_name],
-            stdout=subprocess.PIPE
-        ).stdout.decode('utf-8')
-    else:   
-        return subprocess.run(
-            ['ollama', 'show', model_name],
-            stdout=subprocess.PIPE
-        ).stdout.decode('utf-8')
+    
+    if model_name.lower() == "current":
+        model_name = model_manager.selected_model_name  
+
+    return subprocess.run(
+        ['ollama', 'show', model_name],
+        stdout=subprocess.PIPE
+    ).stdout.decode('utf-8')         
 
 agent = create_agent(
     model=model_manager.selected_model,
     middleware=[dynamic_model_selection],
-    tools=[change_light_color, get_model_information]
+    tools=[change_ha_light_color, change_ha_scene, get_model_information],
 )
-
 
 def invoke_agent(prompt: str, history: Optional[list[dict[str,str]]] = None) -> dict[str,str]:
     messages = history[:] if history else []

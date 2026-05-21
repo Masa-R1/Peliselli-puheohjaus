@@ -5,7 +5,7 @@ import { useConversationStore } from "../stores/useConversationStore"
 import { useModelStore } from "../stores/useModelStore"
 import VoiceInput from "./VoiceInput"
 import ReactMarkdown from "react-markdown"
-import { getSpeechText } from "../utils/speechText"
+import { webSpeechTextToSpeech } from "../utils/textToSpeech"
 import { apiUrl } from "../utils/api"
 import "../app.css"
 import { useTranslation } from "react-i18next";
@@ -32,7 +32,7 @@ function Input() {
     function toggleVoice() {
         setVoiceEnabled((prev) => {
             if (prev) {
-                window.speechSynthesis.cancel()
+                webSpeechTextToSpeech.cancel()
             }
             return !prev
         })
@@ -89,36 +89,19 @@ function Input() {
     function speak(text) {
         if (!voiceEnabled) return
 
-        window.speechSynthesis.cancel()
-
-        const utterance = new SpeechSynthesisUtterance(getSpeechText(text))
-
-        utterance.lang = i18n.language;
-        // choose a matching voice for the selected language if available
-        try {
-            const voices = window.speechSynthesis.getVoices()
-            if (voices && voices.length) {
-                const match = voices.find(v => v.lang && v.lang.startsWith(i18n.language)) || voices.find(v => v.lang && v.lang.startsWith(i18n.language.split('-')[0]))
-                if (match) utterance.voice = match
-            }
-        } catch (e) {}
-        utterance.rate = 1
-        utterance.pitch = 1
-        utterance.volume = 1
-
-        utterance.onstart = () => {
-            setIsSpeaking(true)
-        }
-
-        utterance.onend = () => {
-            setIsSpeaking(false)
-        }
-
-        utterance.onerror = () => {
-            setIsSpeaking(false)
-        }
-
-        window.speechSynthesis.speak(utterance)
+        webSpeechTextToSpeech.cancel()
+        webSpeechTextToSpeech.speak(text, {
+            language: i18n.language,
+            onStart: () => {
+                setIsSpeaking(true)
+            },
+            onEnd: () => {
+                setIsSpeaking(false)
+            },
+            onError: () => {
+                setIsSpeaking(false)
+            },
+        })
     }
 
     return (
