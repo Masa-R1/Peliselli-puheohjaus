@@ -25,6 +25,7 @@ export async function streamChat(promptInfo, options = {}) {
     const decoder = new TextDecoder("utf-8")
     let buffer = ""
     let finalMessage = null
+    let streamError = null
 
     function processLine(rawLine) {
         const line = rawLine.trim()
@@ -37,6 +38,7 @@ export async function streamChat(promptInfo, options = {}) {
 
         if (data.type === "done") {
             finalMessage = data.message
+            streamError = data.streamError || null
         }
 
         if (data.type === "error") {
@@ -67,6 +69,10 @@ export async function streamChat(promptInfo, options = {}) {
 
     if (!finalMessage) {
         throw new Error("Stream ended without final message.")
+    }
+
+    if (streamError) {
+        console.error("Chat stream backend error:", streamError)
     }
 
     return finalMessage

@@ -95,8 +95,9 @@ function Input() {
             addMessages(assistantMessage)
             finalizeStreamingBotMessage(reply)
         } catch (error) {
-            console.log(error)
+                console.error("Chat request failed:", error)
             finalizeStreamingBotMessage()
+                setLoading(false)
         } finally {
             setLoading(false)
         }
