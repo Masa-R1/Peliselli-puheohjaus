@@ -23,13 +23,7 @@ async def create_chat_stream(prompt: ChatPrompt):
         chunks: list[str] = []
 
         try:
-            async for event in crud.create_chat_stream(prompt):
-                if event.get("type") == "tool_call":
-                    payload = json.dumps(event, ensure_ascii=False)
-                    yield f"{payload}\n"
-                    continue
-
-                token = event.get("text", "")
+            async for token in crud.create_chat_stream(prompt):
                 chunks.append(token)
                 payload = json.dumps({"type": "token", "text": token}, ensure_ascii=False)
                 yield f"{payload}\n"

@@ -36,10 +36,6 @@ export async function streamChat(promptInfo, options = {}) {
             options.onToken(data.text || "")
         }
 
-        if (data.type === "tool_call" && typeof options.onToolCall === "function") {
-            options.onToolCall(data)
-        }
-
         if (data.type === "done") {
             finalMessage = data.message
             streamError = data.streamError || null
@@ -80,17 +76,4 @@ export async function streamChat(promptInfo, options = {}) {
     }
 
     return finalMessage
-}
-
-export function formatToolCall(toolCall) {
-    const name = toolCall?.name || "tool"
-    const args = toolCall?.args && typeof toolCall.args === "object" ? toolCall.args : {}
-    const entries = Object.entries(args)
-
-    if (!entries.length) {
-        return `Tool: ${name}()`
-    }
-
-    const formattedArgs = entries.map(([key, value]) => `${key}=${JSON.stringify(value)}`).join(", ")
-    return `Tool: ${name}(${formattedArgs})`
 }

@@ -12,6 +12,6 @@ async def create_chat_stream(prompt: ChatPrompt):
     if prompt.model:
         model_manager.set_model(prompt.model)
 
-    async for event in stream_agent(prompt.prompt, prompt.history):
-        yield event
+    async for token in stream_agent(prompt.prompt, prompt.history):
+        yield token
     

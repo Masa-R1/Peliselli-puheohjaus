@@ -9,7 +9,7 @@ import VoiceStatusDetails from "./components/VoiceStatusDetails"
 import VoiceToggleListeningButton from "./components/VoiceToggleListeningButton"
 import ModelSelect from "./components/ModelSelect"
 import { webSpeechTextToSpeech } from "./utils/textToSpeech"
-import { apiUrl, formatToolCall, streamChat } from "./utils/api"
+import { apiUrl, streamChat } from "./utils/api"
 
 import useSound from 'use-sound'
 import notifySound from "./assets/sound/278142__ricemaster__effect_notify.wav"
@@ -381,11 +381,6 @@ export default function VoiceApp() {
                     appendToStreamingBotMessage(token)
                     setLastReply((prev) => `${prev}${token}`)
                     speechSessionRef.current?.pushText(token)
-                },
-                onToolCall: (toolCall) => {
-                    const display = `\n\n${formatToolCall(toolCall)}\n`
-                    appendToStreamingBotMessage(display)
-                    setLastReply((prev) => `${prev}${display}`)
                 },
             })
 
