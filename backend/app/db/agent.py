@@ -216,6 +216,30 @@ def _extract_text_from_message_chunk(message_chunk: Any) -> str:
     return str()
 
 
+def _extract_tool_calls_from_message_chunk(message_chunk: Any) -> list[dict[str, Any]]:
+    tool_calls = getattr(message_chunk, "tool_calls", None)
+    if isinstance(tool_calls, list) and tool_calls:
+        return [tool_call for tool_call in tool_calls if isinstance(tool_call, dict)]
+
+    if isinstance(message_chunk, dict):
+        tool_calls = message_chunk.get("tool_calls")
+        if isinstance(tool_calls, list):
+            return [tool_call for tool_call in tool_calls if isinstance(tool_call, dict)]
+
+    return []
+
+
+def _format_tool_call(tool_call: dict[str, Any]) -> str:
+    name = str(tool_call.get("name") or "tool")
+    args = tool_call.get("args") or {}
+
+    if isinstance(args, dict) and args:
+        formatted_args = ", ".join(f'{key}={value!r}' for key, value in args.items())
+        return f"Tool: {name}({formatted_args})"
+
+    return f"Tool: {name}()"
+
+
 def _extract_stream_text(stream_item: Any) -> str:
     # `agent.astream(..., stream_mode="messages")` can yield:
     # - `(message_chunk, metadata)`
@@ -244,11 +268,43 @@ def _extract_stream_text(stream_item: Any) -> str:
     return _extract_text_from_message_chunk(stream_item)
 
 
-async def stream_agent(prompt: str, history: Optional[list[dict[str, str]]] = None) -> AsyncIterator[str]:
+async def stream_agent(prompt: str, history: Optional[list[dict[str, str]]] = None) -> AsyncIterator[dict[str, Any]]:
     messages = history[:] if history else []
     messages.append({"role": "user", "content": prompt})
 
     async for stream_item in agent.astream({"messages": messages}, stream_mode="messages"):
-        chunk_text = _extract_stream_text(stream_item)
+        message_chunk = None
+        if isinstance(stream_item, tuple) and stream_item:
+            if len(stream_item) == 2:
+                message_chunk = stream_item[0]
+            elif len(stream_item) == 3 and stream_item[1] == "messages":
+                data = stream_item[2]
+                if isinstance(data, tuple) and data:
+                    message_chunk = data[0]
+                else:
+                    message_chunk = data
+            else:
+                message_chunk = stream_item[-1]
+        elif isinstance(stream_item, dict):
+            data = stream_item.get("data")
+            if data is not None:
+                message_chunk = data[0] if isinstance(data, tuple) and data else data
+            else:
+                message_chunk = stream_item
+        else:
+            message_chunk = stream_item
+
+        tool_calls = _extract_tool_calls_from_message_chunk(message_chunk)
+        if tool_calls:
+            for tool_call in tool_calls:
+                yield {
+                    "type": "tool_call",
+                    "name": tool_call.get("name"),
+                    "args": tool_call.get("args") or {},
+                    "display": _format_tool_call(tool_call),
+                }
+            continue
+
+        chunk_text = _extract_text_from_message_chunk(message_chunk)
         if chunk_text:
-            yield chunk_text
+            yield {"type": "token", "text": chunk_text}

@@ -6,7 +6,7 @@ import { useModelStore } from "../stores/useModelStore"
 import VoiceInput from "./VoiceInput"
 import ReactMarkdown from "react-markdown"
 import { webSpeechTextToSpeech } from "../utils/textToSpeech"
-import { streamChat } from "../utils/api"
+import { formatToolCall, streamChat } from "../utils/api"
 import "../app.css"
 import { useTranslation } from "react-i18next";
 
@@ -85,6 +85,10 @@ function Input() {
                     streamedReply += token
                     appendToStreamingBotMessage(token)
                     speechSessionRef.current?.pushText(token)
+                },
+                onToolCall: (toolCall) => {
+                    const display = `\n\n${formatToolCall(toolCall)}\n`
+                    appendToStreamingBotMessage(display)
                 },
             })
 
