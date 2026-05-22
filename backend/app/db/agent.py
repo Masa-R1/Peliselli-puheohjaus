@@ -1,7 +1,7 @@
 import httpx
 from langchain_ollama import ChatOllama
 from langchain.agents import create_agent
-from langchain.agents.middleware import wrap_model_call, ModelRequest, ModelResponse
+from langchain.agents.middleware import awrap_model_call, ModelRequest, ModelResponse
 from typing import Any, AsyncIterator, Optional
 import subprocess
 import time
@@ -95,8 +95,13 @@ class ModelManager:
 # Create a single manager instance
 model_manager = ModelManager()
 
+@awrap_model_call
+async def dynamic_model_selection(request: ModelRequest, handler) -> ModelResponse:
+    model_manager.refresh()
+    return await handler(request.override(model=model_manager.selected_model))
+
 @wrap_model_call
-def dynamic_model_selection(request: ModelRequest, handler) -> ModelResponse:
+def dynamic_model_selection_sync(request: ModelRequest, handler) -> ModelResponse:
     model_manager.refresh()
     return handler(request.override(model=model_manager.selected_model))
 
@@ -119,6 +124,17 @@ def change_ha_scene(scene: str) -> str:
         scene: The name of the scene to change to. Should be in English."""
     print(scene)
     return f"Changed scene to {scene}."
+
+@tool
+def get_current_lunch_at_samk_silvia() -> str:
+    """English: Tool to get the current lunch menu at SAMK Silvia restaurant. 
+    Finnish: Työkalu, jolla voi hakea tämän päivän lounasmenun SAMKin Silvian ravintolasta."""
+    try:
+        response = httpx.get("https://www.compass-group.fi/menuapi/feed/json?costNumber=0351&language=fi", timeout=10)
+        response.raise_for_status()
+        return response.text
+    except Exception as e:
+        return f"Error fetching lunch menu: {str(e)}"
 
 @tool
 def get_model_information(model_name: str) -> str:
