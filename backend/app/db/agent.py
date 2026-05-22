@@ -1,7 +1,4 @@
 import httpx
-from datetime import date
-from langchain_community.agent_toolkits import JsonToolkit, create_json_agent
-from langchain_community.tools.json.tool import JsonSpec
 from langchain_ollama import ChatOllama
 from langchain.agents import create_agent
 from langchain.agents.middleware import wrap_model_call, ModelRequest, ModelResponse
@@ -128,39 +125,13 @@ def get_current_lunch_at_samk_silvia() -> str:
     """English: Tool to get the current lunch menu at SAMK Silvia restaurant. 
     Finnish: Työkalu, jolla voi hakea tämän päivän lounasmenun SAMKin Silvian ravintolasta."""
     url = "https://www.compass-group.fi/menuapi/feed/json?costNumber=0351&language=fi"
-
     try:
         response = httpx.get(url, timeout=httpx.Timeout(AGENT_TIMEOUT))
         response.raise_for_status()
-        menu_data = response.json()
+        return response.text
     except Exception as exc:
-        return f"Error: Unable to load lunch menu from SAMK Silvia. {exc}"
+        return f'{{"ErrorText":"Failed to fetch lunch menu: {exc}"}}'
 
-    try:
-        spec = JsonSpec(dict_=menu_data, max_value_length=4_000)
-        toolkit = JsonToolkit(spec=spec)
-        json_agent = create_json_agent(
-            model_manager.selected_model,
-            toolkit,
-            verbose=False,
-        )
-
-        today = date.today().isoformat()
-        prompt = (
-            f"Find lunch menu for date {today}. "
-            "Return concise Finnish answer with restaurant name, lunch time, "
-            "menu names and components. If today's menu is missing, say so."
-        )
-        result = json_agent.invoke({"input": prompt})
-    except Exception as exc:
-        return f"Error: Unable to parse lunch menu from SAMK Silvia. {exc}"
-
-    if isinstance(result, dict):
-        output = result.get("output")
-        if output:
-            return str(output)
-
-    return str(result)
 
 
 @tool
