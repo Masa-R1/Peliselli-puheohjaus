@@ -31,8 +31,16 @@ async def create_chat_stream(prompt: ChatPrompt):
             final_message = {"role": "assistant", "content": "".join(chunks)}
             payload = json.dumps({"type": "done", "message": final_message}, ensure_ascii=False)
             yield f"{payload}\n"
-        except Exception:
-            payload = json.dumps({"type": "error", "error": "Error: No response from model."})
+        except Exception as error:
+            fallback = crud.create_chat(prompt)
+            payload = json.dumps(
+                {
+                    "type": "done",
+                    "message": fallback,
+                    "streamError": str(error),
+                },
+                ensure_ascii=False,
+            )
             yield f"{payload}\n"
 
     return StreamingResponse(response_stream(), media_type="application/x-ndjson")

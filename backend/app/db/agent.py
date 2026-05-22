@@ -206,14 +206,28 @@ def _extract_text_from_message_chunk(message_chunk: Any) -> str:
 
 
 def _extract_stream_text(stream_item: Any) -> str:
-    # `agent.astream(..., stream_mode="messages")` commonly yields `(message_chunk, metadata)`.
+    # `agent.astream(..., stream_mode="messages")` can yield:
+    # - `(message_chunk, metadata)`
+    # - `(namespace, "messages", (message_chunk, metadata))`
     if isinstance(stream_item, tuple) and stream_item:
-        return _extract_text_from_message_chunk(stream_item[0])
+        if len(stream_item) == 2:
+            return _extract_text_from_message_chunk(stream_item[0])
+
+        if len(stream_item) == 3 and stream_item[1] == "messages":
+            data = stream_item[2]
+            if isinstance(data, tuple) and data:
+                return _extract_text_from_message_chunk(data[0])
+            return _extract_text_from_message_chunk(data)
+
+        return _extract_text_from_message_chunk(stream_item[-1])
 
     if isinstance(stream_item, dict):
         message = stream_item.get("messages")
         if isinstance(message, list) and message:
             return _extract_text_from_message_chunk(message[-1])
+        data = stream_item.get("data")
+        if data is not None:
+            return _extract_stream_text(data)
         return _extract_text_from_message_chunk(stream_item)
 
     return _extract_text_from_message_chunk(stream_item)
