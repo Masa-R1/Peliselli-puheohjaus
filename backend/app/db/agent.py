@@ -1,7 +1,7 @@
 import httpx
 from langchain_ollama import ChatOllama
 from langchain.agents import create_agent
-from langchain.agents.middleware import awrap_model_call, ModelRequest, ModelResponse
+from langchain.agents.middleware import wrap_model_call, ModelRequest, ModelResponse
 from typing import Any, AsyncIterator, Optional
 import subprocess
 import time
@@ -95,15 +95,10 @@ class ModelManager:
 # Create a single manager instance
 model_manager = ModelManager()
 
-@awrap_model_call
+@wrap_model_call
 async def dynamic_model_selection(request: ModelRequest, handler) -> ModelResponse:
     model_manager.refresh()
     return await handler(request.override(model=model_manager.selected_model))
-
-@wrap_model_call
-def dynamic_model_selection_sync(request: ModelRequest, handler) -> ModelResponse:
-    model_manager.refresh()
-    return handler(request.override(model=model_manager.selected_model))
 
 # Toolit
 @tool
