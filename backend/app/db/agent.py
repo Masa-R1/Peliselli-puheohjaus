@@ -2,7 +2,7 @@ import httpx
 from langchain_ollama import ChatOllama
 from langchain.agents import create_agent
 from langchain.agents.middleware import wrap_model_call, ModelRequest, ModelResponse
-from typing import Optional
+from typing import Any, AsyncIterator, Optional
 import subprocess
 import time
 from urllib.error import URLError
@@ -165,3 +165,65 @@ def invoke_agent(prompt: str, history: Optional[list[dict[str,str]]] = None) -> 
         return {"role": "assistant", "content": answer}
     except:
         return {"role": "assistant", "content": "Error: No response from model."}
+
+
+def _extract_text_from_message_chunk(message_chunk: Any) -> str:
+    if message_chunk is None:
+        return str()
+
+    content_blocks = getattr(message_chunk, "content_blocks", None)
+    if content_blocks:
+        text_parts: list[str] = []
+        for block in content_blocks:
+            if isinstance(block, dict):
+                text = block.get("text")
+                if text:
+                    text_parts.append(str(text))
+        if text_parts:
+            return "".join(text_parts)
+
+    content = getattr(message_chunk, "content", None)
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        text_parts: list[str] = []
+        for item in content:
+            if isinstance(item, str):
+                text_parts.append(item)
+                continue
+            if isinstance(item, dict):
+                text = item.get("text")
+                if text:
+                    text_parts.append(str(text))
+        return "".join(text_parts)
+
+    if isinstance(message_chunk, dict):
+        text = message_chunk.get("text")
+        if text:
+            return str(text)
+
+    return str()
+
+
+def _extract_stream_text(stream_item: Any) -> str:
+    # `agent.astream(..., stream_mode="messages")` commonly yields `(message_chunk, metadata)`.
+    if isinstance(stream_item, tuple) and stream_item:
+        return _extract_text_from_message_chunk(stream_item[0])
+
+    if isinstance(stream_item, dict):
+        message = stream_item.get("messages")
+        if isinstance(message, list) and message:
+            return _extract_text_from_message_chunk(message[-1])
+        return _extract_text_from_message_chunk(stream_item)
+
+    return _extract_text_from_message_chunk(stream_item)
+
+
+async def stream_agent(prompt: str, history: Optional[list[dict[str, str]]] = None) -> AsyncIterator[str]:
+    messages = history[:] if history else []
+    messages.append({"role": "user", "content": prompt})
+
+    async for stream_item in agent.astream({"messages": messages}, stream_mode="messages"):
+        chunk_text = _extract_stream_text(stream_item)
+        if chunk_text:
+            yield chunk_text

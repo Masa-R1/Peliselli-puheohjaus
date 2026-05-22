@@ -9,7 +9,7 @@ import VoiceStatusDetails from "./components/VoiceStatusDetails"
 import VoiceToggleListeningButton from "./components/VoiceToggleListeningButton"
 import ModelSelect from "./components/ModelSelect"
 import { webSpeechTextToSpeech } from "./utils/textToSpeech"
-import { apiUrl } from "./utils/api"
+import { apiUrl, streamChat } from "./utils/api"
 
 import useSound from 'use-sound'
 import notifySound from "./assets/sound/278142__ricemaster__effect_notify.wav"
@@ -56,7 +56,7 @@ export default function VoiceApp() {
 
     const { loading, voiceEnabled, setLoading, setListening, haListening, setHaListening } = useStateStore()
     const { messages, addMessages } = useMessageStore()
-    const { addConversationMessages } = useConversationStore()
+    const { addConversationMessages, startStreamingBotMessage, appendToStreamingBotMessage, finalizeStreamingBotMessage } = useConversationStore()
     const { models, selectedModel } = useModelStore()
 
     const [wakeListeningEnabled, setWakeListeningEnabled] = useState(true)
@@ -85,6 +85,7 @@ export default function VoiceApp() {
     const followUpTimeoutRef = useRef(null)
     const thinkPhraseRef = useRef("")
     const thinkIndexRef = useRef(0)
+    const speechSessionRef = useRef(null)
     //#endregion
 
     useEffect(() => {
@@ -264,6 +265,7 @@ export default function VoiceApp() {
         return () => {
             clearTimeout(restartTimeoutRef.current)
             stopRecognition()
+            speechSessionRef.current?.cancel()
             recognitionRef.current = null
             window.speechSynthesis.cancel()
         }
@@ -332,28 +334,67 @@ export default function VoiceApp() {
         setStatusText("Waiting for response...")
 
         try {
+            speechSessionRef.current?.cancel()
+            speechSessionRef.current = voiceEnabled
+                ? webSpeechTextToSpeech.createSentenceStream({
+                    language: i18n.language,
+                    onStart: () => {
+                        speakingRef.current = true
+                    },
+                    onEnd: () => {
+                        speakingRef.current = false
+                        if (listeningEnabledRef.current && !loadingRef.current) {
+                            // restart recognition and open follow-up window
+                            startRecognition()
+                            followUpModeRef.current = true
+                            if (followUpTimeoutRef.current) clearTimeout(followUpTimeoutRef.current)
+                            followUpTimeoutRef.current = setTimeout(() => {
+                                followUpModeRef.current = false
+                                setStatusText(WAITING)
+                                if (listeningEnabledRef.current && !loadingRef.current && !speakingRef.current) {
+                                    startRecognition()
+                                }
+                            }, FOLLOWUP_TIMEOUT_MS)
+                        }
+                    },
+                    onError: () => {},
+                })
+                : null
+
+            if (voiceEnabled) {
+                // Keep recognition paused until full streamed TTS lifecycle completes.
+                speakingRef.current = true
+            }
+
             const promptInfo = {
                 model: selectedModel,
                 prompt: message,
                 history: messagesRef.current,
             }
 
-            const response = await fetch(apiUrl("/chat"), {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
+            let streamedReply = ""
+            setLastReply("")
+            startStreamingBotMessage()
+            const data = await streamChat(promptInfo, {
+                onToken: (token) => {
+                    streamedReply += token
+                    appendToStreamingBotMessage(token)
+                    setLastReply((prev) => `${prev}${token}`)
+                    speechSessionRef.current?.pushText(token)
                 },
-                body: JSON.stringify(promptInfo),
             })
 
-            const data = await response.json()
-            addMessages(data)
-            addConversationMessages(data.content, "bot")
-            setLastReply(data.content)
-            speak(data.content)
+            speechSessionRef.current?.complete()
+
+            const finalReply = data?.content || streamedReply
+            const assistantMessage = { role: "assistant", content: finalReply }
+            addMessages(assistantMessage)
+            finalizeStreamingBotMessage(finalReply)
+            setLastReply(finalReply)
             setStatusText(WAITING)
         } catch (error) {
             console.error(error)
+            finalizeStreamingBotMessage()
             setErrorText("Failed to contact backend.")
             setStatusText(WAITING)
         } finally {
@@ -368,39 +409,6 @@ export default function VoiceApp() {
                 startRecognition()
             }
         }
-    }
-
-    function speak(text) {
-        if (!voiceEnabled) return
-
-        speakingRef.current = true
-        webSpeechTextToSpeech.cancel()
-
-        webSpeechTextToSpeech.speak(text, {
-            language: i18n.language,
-            onEnd: () => {
-                speakingRef.current = false
-                if (listeningEnabledRef.current && !loadingRef.current) {
-                    // restart recognition and open follow-up window
-                    startRecognition()
-                    followUpModeRef.current = true
-                    if (followUpTimeoutRef.current) clearTimeout(followUpTimeoutRef.current)
-                    followUpTimeoutRef.current = setTimeout(() => {
-                        followUpModeRef.current = false
-                        setStatusText(WAITING)
-                        if (listeningEnabledRef.current && !loadingRef.current && !speakingRef.current) {
-                            startRecognition()
-                        }
-                    }, FOLLOWUP_TIMEOUT_MS)
-                }
-            },
-            onError: () => {
-                speakingRef.current = false
-                if (listeningEnabledRef.current && !loadingRef.current) {
-                    startRecognition()
-                }
-            },
-        })
     }
 
     const circleStyle = useMemo(() => {

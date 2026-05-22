@@ -10,6 +10,7 @@ function Chat() {
     const { setLoading } = useStateStore()
 
     const { conversationMessages } = useConversationStore()
+    const hasStreamingBotMessage = conversationMessages.some((msg) => msg.sender === "bot" && msg.streaming)
 
     const chatboxRef = useRef(null);
 
@@ -72,7 +73,7 @@ function Chat() {
                 </div>
             ))}
 
-            {loading && (
+            {loading && !hasStreamingBotMessage && (
                 <div className="message bot typing">
                     <img
                         src={logo}
