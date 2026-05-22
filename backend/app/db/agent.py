@@ -59,7 +59,8 @@ class ModelManager:
             if parts:
                 name = parts[0]
                 models[name] = ChatOllama(
-                    model=name,  
+                    model=name,
+                    # num_predict=100, Max tokenit  
                     client_kwargs={
                         "timeout": httpx.Timeout(AGENT_TIMEOUT)
                     }
