@@ -122,8 +122,8 @@ def change_ha_scene(scene: str) -> str:
 
 @tool
 def get_current_lunch_at_samk_silvia() -> str:
-    """English: Tool to get the current lunch menu at SAMK Silvia restaurant. 
-    Finnish: Työkalu, jolla voi hakea tämän päivän lounasmenun SAMKin Silvian ravintolasta."""
+    """English: Tool to get the current week's lunch menu at SAMK Silvia restaurant. 
+    Finnish: Työkalu, jolla voi hakea tämän viikon lounasmenun SAMKin Silvian ravintolasta."""
     url = "https://www.compass-group.fi/menuapi/feed/json?costNumber=0351&language=fi"
     try:
         response = httpx.get(url, timeout=httpx.Timeout(AGENT_TIMEOUT))
@@ -131,8 +131,6 @@ def get_current_lunch_at_samk_silvia() -> str:
         return response.text
     except Exception as exc:
         return f'{{"ErrorText":"Failed to fetch lunch menu: {exc}"}}'
-
-
 
 @tool
 def get_model_information(model_name: str) -> str:
@@ -161,12 +159,18 @@ def get_model_information(model_name: str) -> str:
     return subprocess.run(
         ['ollama', 'show', model_name],
         stdout=subprocess.PIPE
-    ).stdout.decode('utf-8')         
+    ).stdout.decode('utf-8')  
+
+@tool
+def get_date_and_time() -> str:
+    """English: Tool to get the current date and time. 
+    Finnish: Työkalu, jolla voi hakea tämänhetkinen päivämäärä ja kellonaika."""
+    return time.strftime("%Y-%m-%d %H:%M:%S")       
 
 agent = create_agent(
     model=model_manager.selected_model,
     middleware=[dynamic_model_selection],
-    tools=[change_ha_light_color, change_ha_scene, get_current_lunch_at_samk_silvia, get_model_information],
+    tools=[change_ha_light_color, change_ha_scene, get_current_lunch_at_samk_silvia, get_model_information, get_date_and_time],
 )
 
 def invoke_agent(prompt: str, history: Optional[list[dict[str,str]]] = None) -> dict[str,str]:
