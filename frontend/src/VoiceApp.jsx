@@ -14,6 +14,7 @@ import { apiUrl, streamChat } from "./utils/api"
 import useSound from 'use-sound'
 import notifySound from "./assets/sound/278142__ricemaster__effect_notify.wav"
 import LanguageSelect from "./components/LanguageSelector"
+
 const WAITING = "Awaiting activation..."
 const THINK_PHRASES = ["Thinking...", "Calculating...", "Pondering...", "Analyzing...", "Reflecting...", "Generating slop..."]
 const FOLLOWUP_TIMEOUT_MS = 20000
@@ -54,9 +55,21 @@ export default function VoiceApp() {
     const { t, i18n } = useTranslation()
     const [playNotify] = useSound(notifySound, { volume: 0.5 })
 
-    const { loading, voiceEnabled, setLoading, setListening, haListening, setHaListening } = useStateStore()
+    const { 
+        loading, 
+        voiceEnabled, 
+        setLoading, 
+        setListening, 
+        haListening, 
+        setHaListening 
+    } = useStateStore()
     const { messages, addMessages } = useMessageStore()
-    const { addConversationMessages, startStreamingBotMessage, appendToStreamingBotMessage, finalizeStreamingBotMessage } = useConversationStore()
+    const { 
+        addConversationMessages, 
+        startStreamingBotMessage, 
+        appendToStreamingBotMessage, 
+        finalizeStreamingBotMessage 
+    } = useConversationStore()
     const { models, selectedModel } = useModelStore()
 
     const [wakeListeningEnabled, setWakeListeningEnabled] = useState(true)
