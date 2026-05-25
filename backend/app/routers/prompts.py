@@ -32,11 +32,10 @@ async def create_chat_stream(prompt: ChatPrompt):
             payload = json.dumps({"type": "done", "message": final_message}, ensure_ascii=False)
             yield f"{payload}\n"
         except Exception as error:
-            fallback = crud.create_chat(prompt)
             payload = json.dumps(
                 {
                     "type": "done",
-                    "message": fallback,
+                    "message": "virje",
                     "streamError": str(error),
                 },
                 ensure_ascii=False,
