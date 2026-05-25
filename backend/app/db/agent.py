@@ -3,8 +3,10 @@ from langchain_ollama import ChatOllama
 from langchain.agents import create_agent
 from langchain.agents.middleware import wrap_model_call, ModelRequest, ModelResponse
 from typing import Any, AsyncIterator, Optional
+from datetime import datetime, timezone
 import subprocess
 import time
+import json
 from urllib.error import URLError
 from urllib.request import urlopen
 from langchain.tools import tool
@@ -122,15 +124,23 @@ def change_ha_scene(scene: str) -> str:
 
 @tool
 def get_current_lunch_at_samk_silvia() -> str:
-    """English: Tool to get the current week's lunch menu at SAMK Silvia restaurant. 
-    Finnish: Työkalu, jolla voi hakea tämän viikon lounasmenun SAMKin Silvian ravintolasta."""
+    """English: Tool to get the current day's lunch menu at SAMK Silvia restaurant. 
+    Finnish: Työkalu, jolla voi hakea tämän päivän lounasmenun SAMKin Silvian ravintolasta."""
     url = "https://www.compass-group.fi/menuapi/feed/json?costNumber=0351&language=fi"
     try:
         response = httpx.get(url, timeout=httpx.Timeout(AGENT_TIMEOUT))
         response.raise_for_status()
-        return response.text
+        payload = response.json()
+        current_day = datetime.now(timezone.utc).date().isoformat()
+
+        for menu_day in payload.get("MenusForDays", []):
+            menu_date = str(menu_day.get("Date", ""))[:10]
+            if menu_date == current_day:
+                return json.dumps(menu_day, ensure_ascii=False)
+
+        return json.dumps({"ErrorText": f"No lunch menu found for {current_day}"}, ensure_ascii=False)
     except Exception as exc:
-        return f'{{"ErrorText":"Failed to fetch lunch menu: {exc}"}}'
+        return json.dumps({"ErrorText": f"Failed to fetch lunch menu: {exc}"}, ensure_ascii=False)
 
 @tool
 def get_model_information(model_name: str) -> str:
@@ -163,9 +173,9 @@ def get_model_information(model_name: str) -> str:
 
 @tool
 def get_date_and_time() -> str:
-    """English: Tool to get the current date and time. 
-    Finnish: Työkalu, jolla voi hakea tämänhetkinen päivämäärä ja kellonaika."""
-    return time.strftime("%Y-%m-%d %H:%M:%S")       
+    """English: Tool to get the current day of week, date and time. 
+    Finnish: Työkalu, jolla voi hakea tämänhetkinen viikonpäivä, päivämäärä ja kellonaika."""
+    return time.strftime("%A, %Y-%m-%d %H:%M:%S")       
 
 agent = create_agent(
     model=model_manager.selected_model,
