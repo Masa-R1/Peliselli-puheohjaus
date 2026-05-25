@@ -143,6 +143,27 @@ def get_current_lunch_at_samk_silvia() -> str:
         return json.dumps({"ErrorText": f"Failed to fetch lunch menu: {exc}"}, ensure_ascii=False)
 
 @tool
+def get_chuck_norris_joke() -> str:
+    """English: Tool to get a random Chuck Norris joke.
+    Finnish: Työkalu satunnaisen Chuck Norris -vitsin hakemiseen.
+
+    Returns the joke text from the `value` field in the API response.
+    """
+    url = "https://api.chucknorris.io/jokes/random"
+    try:
+        response = httpx.get(url, timeout=httpx.Timeout(AGENT_TIMEOUT))
+        response.raise_for_status()
+        payload = response.json()
+
+        joke = payload.get("value")
+        if joke:
+            return str(joke)
+
+        return "Chuck Norris doesn’t check for missing JSON fields. The JSON adds them out of fear."
+    except Exception as exc:
+        return f"Chuck Norris once sent a GET request for a Chuck Norris joke. The endpoint returned {exc}—because the server couldn’t handle the pressure of retrieving Chuck Norris."
+
+@tool
 def get_model_information(model_name: str) -> str:
     """English: Tool to get information about you and other available models. 
     Finnish: Työkalu, jolla voi hakea tietoja sinusta ja muista saatavilla olevista malleista.
@@ -180,7 +201,7 @@ def get_date_and_time() -> str:
 agent = create_agent(
     model=model_manager.selected_model,
     middleware=[dynamic_model_selection],
-    tools=[change_ha_light_color, change_ha_scene, get_current_lunch_at_samk_silvia, get_model_information, get_date_and_time],
+    tools=[change_ha_light_color, change_ha_scene, get_current_lunch_at_samk_silvia, get_chuck_norris_joke, get_model_information, get_date_and_time],
 )
 
 def invoke_agent(prompt: str, history: Optional[list[dict[str,str]]] = None) -> dict[str,str]:
