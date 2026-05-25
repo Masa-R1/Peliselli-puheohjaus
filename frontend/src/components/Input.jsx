@@ -7,7 +7,7 @@ import VoiceInput from "./VoiceInput"
 import ReactMarkdown from "react-markdown"
 import { webSpeechTextToSpeech } from "../utils/textToSpeech"
 import { streamChat } from "../utils/api"
-import "../app.css"
+import "../styles/app.css"
 import { useTranslation } from "react-i18next";
 
 function Input() {

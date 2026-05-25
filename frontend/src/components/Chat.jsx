@@ -3,7 +3,7 @@ import { useStateStore } from "../stores/useStateStore"
 import { useConversationStore } from "../stores/useConversationStore"
 import ReactMarkdown from "react-markdown";
 import logo from "../assets/samk-bubble.png";
-import "../ellipsis-anim.css"
+import "../styles/ellipsis-anim.css"
 
 function Chat() {
     const { loading } = useStateStore()
