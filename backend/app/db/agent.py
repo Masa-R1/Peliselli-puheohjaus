@@ -105,8 +105,8 @@ async def dynamic_model_selection(request: ModelRequest, handler) -> ModelRespon
 # Toolit
 @tool
 def change_ha_light_color(color: str) -> str:
-    """English: Tool to change the light color in Home Assistant. 
-    Finnish: Työkalu, jolla voi vaihtaa valon väriä Home Assistantissa. Palauta aina väri Englanniksi.
+    """English: Tool to change the light color in Home Assistant. Input color can be in whatever language but has to be returned in English. 
+    Finnish: Työkalu, jolla voi vaihtaa valon väriä Home Assistantissa. Palauta aina väri Englanniksi riippumatta syötekielestä.
     Args:
         color: The name of the color to change to. Should be in English."""
     print(color)
@@ -115,7 +115,7 @@ def change_ha_light_color(color: str) -> str:
 @tool
 def change_ha_scene(scene: str) -> str:
     """English: Tool to change the scene in Home Assistant. 
-    Finnish: Työkalu, jolla voi vaihtaa sceneä Home Assistantissa. Palauta aina scene Englanniksi.
+    Finnish: Työkalu, jolla voi vaihtaa sceneä Home Assistantissa.
     
     Args:
         scene: The name of the scene to change to. Should be in English."""
