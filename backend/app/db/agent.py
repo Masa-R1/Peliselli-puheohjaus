@@ -3,8 +3,10 @@ from langchain_ollama import ChatOllama
 from langchain.agents import create_agent
 from langchain.agents.middleware import wrap_model_call, ModelRequest, ModelResponse
 from typing import Any, AsyncIterator, Optional
+from datetime import datetime, timezone
 import subprocess
 import time
+import json
 from urllib.error import URLError
 from urllib.request import urlopen
 from langchain.tools import tool
@@ -103,36 +105,63 @@ async def dynamic_model_selection(request: ModelRequest, handler) -> ModelRespon
 # Toolit
 @tool
 def change_ha_light_color(color: str) -> str:
-    """English: Tool to change the light color in Home Assistant. 
-    Finnish: Työkalu, jolla voi vaihtaa valon väriä Home Assistantissa. Palauta aina väri Englanniksi.
+    """English: Tool to change the light color in Home Assistant. Input color can be in whatever language but has to be returned in English. 
+    Finnish: Työkalu, jolla voi vaihtaa valon väriä Home Assistantissa. Palauta aina väri Englanniksi riippumatta syötekielestä.
     Args:
-        color: The name of the color to change to. Should be in English."""
+        color: The name of the color to change to. Should be returned in English, but can be in any language in the input."""
     print(color)
     return f"Changed light color to {color}."
 
 @tool
 def change_ha_scene(scene: str) -> str:
     """English: Tool to change the scene in Home Assistant. 
-    Finnish: Työkalu, jolla voi vaihtaa sceneä Home Assistantissa. Palauta aina scene Englanniksi.
+    Finnish: Työkalu, jolla voi vaihtaa sceneä Home Assistantissa.
     
     Args:
-        scene: The name of the scene to change to. Should be in English."""
+        scene: The name of the scene to change to. Should be returned in English, but can be in any language in the input."""
     print(scene)
     return f"Changed scene to {scene}."
 
 @tool
 def get_current_lunch_at_samk_silvia() -> str:
-    """English: Tool to get the current lunch menu at SAMK Silvia restaurant. 
+    """English: Tool to get the current day's lunch menu at SAMK Silvia restaurant. 
     Finnish: Työkalu, jolla voi hakea tämän päivän lounasmenun SAMKin Silvian ravintolasta."""
     url = "https://www.compass-group.fi/menuapi/feed/json?costNumber=0351&language=fi"
     try:
         response = httpx.get(url, timeout=httpx.Timeout(AGENT_TIMEOUT))
         response.raise_for_status()
-        return response.text
+        payload = response.json()
+        current_day = datetime.now(timezone.utc).date().isoformat()
+
+        for menu_day in payload.get("MenusForDays", []):
+            menu_date = str(menu_day.get("Date", ""))[:10]
+            if menu_date == current_day:
+                return json.dumps(menu_day, ensure_ascii=False)
+
+        return json.dumps({"ErrorText": f"No lunch menu found for {current_day}"}, ensure_ascii=False)
     except Exception as exc:
-        return f'{{"ErrorText":"Failed to fetch lunch menu: {exc}"}}'
+        return json.dumps({"ErrorText": f"Failed to fetch lunch menu: {exc}"}, ensure_ascii=False)
 
+@tool
+def get_chuck_norris_joke() -> str:
+    """English: Tool to get a random Chuck Norris joke.
+    Finnish: Työkalu satunnaisen Chuck Norris -vitsin hakemiseen.
 
+    Returns the joke text from the `value` field in the API response.
+    """
+    url = "https://api.chucknorris.io/jokes/random"
+    try:
+        response = httpx.get(url, timeout=httpx.Timeout(AGENT_TIMEOUT))
+        response.raise_for_status()
+        payload = response.json()
+
+        joke = payload.get("value")
+        if joke:
+            return str(joke)
+
+        return "Chuck Norris doesn’t check for missing JSON fields. The JSON adds them out of fear."
+    except Exception as exc:
+        return f"Chuck Norris once sent a GET request for a Chuck Norris joke. The endpoint returned {exc}—because the server couldn’t handle the pressure of retrieving Chuck Norris."
 
 @tool
 def get_model_information(model_name: str) -> str:
@@ -161,12 +190,18 @@ def get_model_information(model_name: str) -> str:
     return subprocess.run(
         ['ollama', 'show', model_name],
         stdout=subprocess.PIPE
-    ).stdout.decode('utf-8')         
+    ).stdout.decode('utf-8')  
+
+@tool
+def get_date_and_time() -> str:
+    """English: Tool to get the current day of week, date and time. 
+    Finnish: Työkalu, jolla voi hakea tämänhetkinen viikonpäivä, päivämäärä ja kellonaika."""
+    return time.strftime("%A, %Y-%m-%d %H:%M:%S")       
 
 agent = create_agent(
     model=model_manager.selected_model,
     middleware=[dynamic_model_selection],
-    tools=[change_ha_light_color, change_ha_scene, get_current_lunch_at_samk_silvia, get_model_information],
+    tools=[change_ha_light_color, change_ha_scene, get_current_lunch_at_samk_silvia, get_chuck_norris_joke, get_model_information, get_date_and_time],
 )
 
 def invoke_agent(prompt: str, history: Optional[list[dict[str,str]]] = None) -> dict[str,str]:
