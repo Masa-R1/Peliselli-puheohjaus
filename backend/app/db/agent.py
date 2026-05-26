@@ -361,18 +361,6 @@ agent = create_agent(
     tools=[change_ha_light_color, change_ha_scene, get_current_lunch_at_samk_silvia, get_chuck_norris_joke, get_model_information, get_date_and_time, get_weather_for_area],
 )
 
-def invoke_agent(prompt: str, history: Optional[list[dict[str,str]]] = None) -> dict[str,str]:
-    messages = history[:] if history else []
-    messages.append({"role": "user", "content": prompt})
-    result = agent.invoke({"messages": messages})
-
-    try:
-        answer = result["messages"][-1].content_blocks[-1]["text"]
-        return {"role": "assistant", "content": answer}
-    except:
-        return {"role": "assistant", "content": "Error: No response from model."}
-
-
 def _is_tool_related_message(message_chunk: Any) -> bool:
     message_type = getattr(message_chunk, "type", str()).lower()
     class_name = type(message_chunk).__name__.lower()
