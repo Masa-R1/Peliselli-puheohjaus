@@ -15,7 +15,6 @@ from langchain.tools import tool
 
 AGENT_TIMEOUT = 60
 
-
 def _open_meteo_weather_code_description(weather_code: int) -> str:
     descriptions = {
         0: "Clear sky",
@@ -355,10 +354,57 @@ def get_weather_for_area(area: str, forecast_days: int = 0) -> str:
     except Exception as exc:
         return json.dumps({"ErrorText": f"Failed to fetch weather for {area}: {exc}"}, ensure_ascii=False)
 
+# Tools moved to separate modules
+from .tools.change_ha_light_color import change_ha_light_color
+from .tools.change_ha_scene import change_ha_scene
+from .tools.get_current_lunch_at_samk_silvia import get_current_lunch_at_samk_silvia
+from .tools.get_chuck_norris_joke import get_chuck_norris_joke
+from .tools.get_date_and_time import get_date_and_time
+from .tools.get_weather_for_area import get_weather_for_area
+
+
+@tool
+def get_model_information(model_name: str) -> str:
+    """English: Tool to get information about you and other available models. 
+    Finnish: Työkalu, jolla voi hakea tietoja sinusta ja muista saatavilla olevista malleista.
+    
+    Args:        
+        model_name: 
+                    If equal to "current", returns information about the currently selected model.
+                    Otherwise, if not empty, returns information about the specified model. 
+                    If empty, returns information about all available models.
+    """
+
+    if model_name is None or model_name == "":
+        data = str()
+        for model_name in model_manager.get_model_names():
+            data += subprocess.run(
+                ['ollama', 'show', model_name],
+                stdout=subprocess.PIPE
+            ).stdout.decode('utf-8')
+        return data
+    
+    if model_name.lower() == "current":
+        model_name = model_manager.selected_model_name  
+
+    return subprocess.run(
+        ['ollama', 'show', model_name],
+        stdout=subprocess.PIPE
+    ).stdout.decode('utf-8')  
+
+
 agent = create_agent(
     model=model_manager.selected_model,
     middleware=[dynamic_model_selection],
-    tools=[change_ha_light_color, change_ha_scene, get_current_lunch_at_samk_silvia, get_chuck_norris_joke, get_model_information, get_date_and_time, get_weather_for_area],
+    tools=[
+        change_ha_light_color,
+        change_ha_scene,
+        get_current_lunch_at_samk_silvia,
+        get_chuck_norris_joke,
+        get_model_information,
+        get_date_and_time,
+        get_weather_for_area,
+    ],
 )
 
 def _is_tool_related_message(message_chunk: Any) -> bool:
