@@ -10,6 +10,7 @@ import VoiceToggleListeningButton from "./components/VoiceToggleListeningButton"
 import ModelSelect from "./components/ModelSelect"
 import { webSpeechTextToSpeech } from "./utils/textToSpeech"
 import { apiUrl, streamChat } from "./utils/api"
+import UISelector from "./components/UISelector"
 
 import useSound from 'use-sound'
 import notifySound from "./assets/sound/278142__ricemaster__effect_notify.wav"
@@ -469,6 +470,8 @@ export default function VoiceApp() {
             <LanguageSelect />
 
             <ModelSelect />
+
+            <UISelector />
 
             <VoiceAvatar style={circleStyle} loading={loading} thinkText={thinkText} />
 

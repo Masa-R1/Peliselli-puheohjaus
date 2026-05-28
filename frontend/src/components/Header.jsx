@@ -3,6 +3,7 @@ import ModelSelect from "./ModelSelect";
 import { useStateStore } from "../stores/useStateStore";
 import "../styles/ellipsis-anim.css"
 import LanguageSelect from "./LanguageSelector";
+import UISelector from "./UISelector";
 
 function Header() {
     const { isSpeaking } = useStateStore();
@@ -20,6 +21,8 @@ function Header() {
                 <ModelSelect />
 
                 <LanguageSelect />
+
+                <UISelector />
 
                 {/* <div className="speaking-indicator">
                     <div className={glow-ball }></div>
