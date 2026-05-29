@@ -8,7 +8,7 @@ import time
 from urllib.error import URLError
 from urllib.request import urlopen
 from langchain.tools import tool
-from ..mcp.mcp_client import client
+from .ha_mcp_tools import get_tools
 
 AGENT_TIMEOUT = 60
 
@@ -109,17 +109,6 @@ from .tools.get_chuck_norris_joke import get_chuck_norris_joke
 from .tools.get_date_and_time import get_date_and_time
 from .tools.get_weather_for_area import get_weather_for_area
 
-
-def make_tool(t):
-    return tool(
-        name=t.name,
-        description=t.description,
-        func=lambda **kwargs: client.call_tool(t.name, kwargs)
-    )
-
-tools = [make_tool(t) for t in client.list_tools()]
-
-
 @tool
 def get_model_information(model_name: str) -> str:
     """English: Tool to get information about you and other available models. 
@@ -149,20 +138,22 @@ def get_model_information(model_name: str) -> str:
         stdout=subprocess.PIPE
     ).stdout.decode('utf-8')  
 
+agent = None
 
-agent = create_agent(
-    model=model_manager.selected_model,
-    middleware=[dynamic_model_selection],
-    tools=[
-        change_ha_light_color,
-        change_ha_scene,
-        get_current_lunch_at_samk_silvia,
-        get_chuck_norris_joke,
-        get_model_information,
-        get_date_and_time,
-        get_weather_for_area,
-    ],
-)
+async def build_agent():
+    tools = await get_tools()
+    
+    agent = create_agent(
+        model=model_manager.selected_model,
+        middleware=[dynamic_model_selection],
+        tools=tools,
+    )
+
+    return agent
+
+async def init_agent():
+    global agent
+    agent = await build_agent()
 
 def _is_tool_related_message(message_chunk: Any) -> bool:
     message_type = getattr(message_chunk, "type", str()).lower()
@@ -197,6 +188,7 @@ def _extract_text_from_message_chunk(message_chunk: Any) -> str:
             return "".join(text_parts)
 
     content = getattr(message_chunk, "content", None)
+
     if isinstance(content, str):
         return content
     if isinstance(content, list):
@@ -252,6 +244,10 @@ def _extract_stream_text(stream_item: Any) -> str:
 
 
 async def stream_agent(prompt: str, history: Optional[list[dict[str, str]]] = None) -> AsyncIterator[str]:
+    global agent
+    if agent is None:
+        await init_agent()
+    
     messages = history[:] if history else []
     messages.append({"role": "user", "content": prompt})
 
