@@ -3,6 +3,7 @@ import ModelSelect from "./ModelSelect";
 import { useStateStore } from "../stores/useStateStore";
 import "../voiceIndicator.css"
 import LanguageSelect from "./LanguageSelector";
+import UISelector from "./UISelector";
 
 function Header() {
     const { isSpeaking } = useStateStore();
@@ -17,6 +18,8 @@ function Header() {
                 />
                 <h3>SAMK Bot</h3>
                 
+                <UISelectortor />
+
                 <ModelSelect />
 
                 <LanguageSelect />
