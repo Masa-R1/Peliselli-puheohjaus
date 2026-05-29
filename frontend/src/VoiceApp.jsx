@@ -14,6 +14,7 @@ import { apiUrl } from "./utils/api"
 import useSound from 'use-sound'
 import notifySound from "./assets/sound/278142__ricemaster__effect_notify.wav"
 import LanguageSelect from "./components/LanguageSelector"
+import UISelector from "./components/UISelector"
 const WAITING = "Awaiting activation..."
 const THINK_PHRASES = ["Thinking...", "Calculating...", "Pondering...", "Analyzing...", "Reflecting...", "Generating slop..."]
 const FOLLOWUP_TIMEOUT_MS = 20000
@@ -448,6 +449,8 @@ export default function VoiceApp() {
             <LanguageSelect />
 
             <ModelSelect />
+
+            <UISelector />
 
             <VoiceAvatar style={circleStyle} loading={loading} thinkText={thinkText} />
 

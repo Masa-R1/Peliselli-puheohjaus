@@ -18,12 +18,11 @@ function Header() {
                 />
                 <h3>SAMK Bot</h3>
                 
-                <UISelectortor />
-
                 <ModelSelect />
 
                 <LanguageSelect />
-
+                
+                <UISelector />
                 {/* <div className="speaking-indicator">
                     <div className={glow-ball }></div>
                 </div> */}
