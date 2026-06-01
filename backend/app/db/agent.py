@@ -102,8 +102,6 @@ async def dynamic_model_selection(request: ModelRequest, handler) -> ModelRespon
     return await handler(request.override(model=model_manager.selected_model))
 
 # Tools moved to separate modules
-from .tools.change_ha_light_color import change_ha_light_color
-from .tools.change_ha_scene import change_ha_scene
 from .tools.get_current_lunch_at_samk_silvia import get_current_lunch_at_samk_silvia
 from .tools.get_chuck_norris_joke import get_chuck_norris_joke
 from .tools.get_date_and_time import get_date_and_time
@@ -136,13 +134,23 @@ def get_model_information(model_name: str) -> str:
     return subprocess.run(
         ['ollama', 'show', model_name],
         stdout=subprocess.PIPE
-    ).stdout.decode('utf-8')  
+    ).stdout.decode('utf-8')
 
 agent = None
 
 async def build_agent():
-    tools = await get_tools()
+    ha_tools = await get_tools()
     
+    local_tools = [
+        get_current_lunch_at_samk_silvia, 
+        get_chuck_norris_joke, 
+        get_date_and_time, 
+        get_weather_for_area,
+        get_model_information
+    ]
+
+    tools = ha_tools + local_tools
+
     agent = create_agent(
         model=model_manager.selected_model,
         middleware=[dynamic_model_selection],

@@ -9,10 +9,12 @@ Ohjelma toimii 25 ja 24 alkuisilla node versiolla
 
 1. Asenna riippuvuudet komennolla: `npm i`
 
-2. Aja ohjelmaa komennolla: `npm run dev`
+2. Ohjelman voit käynnistää `start.sh` skriptillä, joka aukaisee Chromen ja laittaa frontendin pyörimään
 
 ## Backend URL
 
-Frontend käyttää `VITE_BACKEND_URL`-ympäristömuuttujaa, jos se on asetettu. Ilman sitä kehityspalvelin proxyttää pyynnöt osoitteeseen `http://localhost:8000`
+Frontend käyttää `VITE_BACKEND_URL`-ympäristömuuttujaa, jos se on asetettu. Ilman sitä kehityspalvelin proxyttää pyynnöt osoitteeseen `http://localhost:8000` (8000 on FastAPIn oletusportti)
 
-- Osoite asetetaan komennolla: `Set-Variable -Name VITE_BACKEND_URL -Value http://backend.osoite:XXXX` (FastAPI portti on 8000)
+- Osoite asetetaan komennolla:
+    - Linux: `VITE_BACKEND_URL=http://backend.osoite:8000`
+    - Windows: `Set-Variable -Name VITE_BACKEND_URL -Value http://backend.osoite:8000`
