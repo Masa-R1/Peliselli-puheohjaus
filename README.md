@@ -1,6 +1,7 @@
 # Pelisellin puheohjaus
 
-Projektissa hyödynnetään paikallista tekoälymallia chattibotin rakentamiseen, jonka kanssa olisi mahdollista myös keskustella puheella.
+Projektissa hyödynnetään paikallista tekoälymallia ääniavustajan toteuttamiseen. Avustajan päätehtävänä olisi hallita mm. 
+Home Assistant järjestelmän valoja. 
 
 ## Backend
 

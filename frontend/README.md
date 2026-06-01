@@ -1,11 +1,18 @@
 # Frontend Pelisellin AI-puheohjaukseen
 
+Ohjelma käyttää puheentunnistukseen (STT) Googlen Web Speech APIa, joka toimii Chrome selaimessa. 
+Puhe (TTS) tulee myös Chromen kautta. Ohjelma ei siis toimi, ainakaan Firefoxissa, sellaisenaan
+
 ## Ohjelman käyttö
 
-Asenna riippuvuudet komennolla: `npm i`
+Ohjelma toimii 25 ja 24 alkuisilla node versiolla
 
-Aja ohjelmaa komennolla: `npm run dev`
+1. Asenna riippuvuudet komennolla: `npm i`
 
-## Backend-osoite
+2. Aja ohjelmaa komennolla: `npm run dev`
 
-Frontend käyttää `VITE_BACKEND_URL`-ympäristömuuttujaa, jos se on asetettu. Ilman sitä kehityspalvelin proxyttää pyynnöt osoitteeseen `http://localhost:8000`.
+## Backend URL
+
+Frontend käyttää `VITE_BACKEND_URL`-ympäristömuuttujaa, jos se on asetettu. Ilman sitä kehityspalvelin proxyttää pyynnöt osoitteeseen `http://localhost:8000`
+
+- Osoite asetetaan komennolla: `Set-Variable -Name VITE_BACKEND_URL -Value http://backend.osoite:XXXX` (FastAPI portti on 8000)
