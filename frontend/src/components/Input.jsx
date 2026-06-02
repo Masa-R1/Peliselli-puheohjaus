@@ -6,8 +6,8 @@ import { useModelStore } from "../stores/useModelStore"
 import VoiceInput from "./VoiceInput"
 import ReactMarkdown from "react-markdown"
 import { webSpeechTextToSpeech } from "../utils/textToSpeech"
-import { apiUrl } from "../utils/api"
-import "../app.css"
+import { streamChat } from "../utils/api"
+import "../styles/app.css"
 import { useTranslation } from "react-i18next";
 
 function Input() {
@@ -15,13 +15,14 @@ function Input() {
 
     const { inputMessage, setInputMessage, messages, addMessages } = useMessageStore()
 
-    const { conversationMessages, addConversationMessages } = useConversationStore()
+    const { addConversationMessages, startStreamingBotMessage, appendToStreamingBotMessage, finalizeStreamingBotMessage } = useConversationStore()
 
     const { selectedModel } = useModelStore()
 
     const { i18n } = useTranslation();
 
     const chatboxId = useId()
+    const speechSessionRef = useRef(null)
 
     function handleKeyDown(e) {
         if (e.key === "Enter") {
@@ -32,6 +33,7 @@ function Input() {
     function toggleVoice() {
         setVoiceEnabled((prev) => {
             if (prev) {
+                speechSessionRef.current?.cancel()
                 webSpeechTextToSpeech.cancel()
             }
             return !prev
@@ -41,11 +43,11 @@ function Input() {
     async function sendMessage() {
         const message = inputMessage.trim()
 
+        if (!message || loading) return
+
         const new_message = {role:"user", content:message}
         
         addMessages(new_message)
-
-        if (!message || loading) return
 
         addConversationMessages(message, "user")
 
@@ -59,49 +61,46 @@ function Input() {
             history: messages
         }
 
-        console.log(promptInfo)
+        let streamedReply = ""
 
-        let reply = ""
+        try {
+            speechSessionRef.current?.cancel()
+            speechSessionRef.current = voiceEnabled
+                ? webSpeechTextToSpeech.createSentenceStream({
+                    language: i18n.language,
+                    onStart: () => {
+                        setIsSpeaking(true)
+                    },
+                    onEnd: () => {
+                        setIsSpeaking(false)
+                    },
+                    onError: () => {},
+                })
+                : null
 
-        fetch(apiUrl("/chat"), {
-            method: "POST",
-            headers: {
-                "Content-Type": "Application/JSON",
-            },
-            body: JSON.stringify(promptInfo),
-        })
-        .then((respose) => respose.json())
-        .then(data => {
-            reply = data.content
-            addMessages(data)
-        })
-        .then((newPrompt) => {
-            addConversationMessages(reply, "bot")
-            speak(reply)
+            startStreamingBotMessage()
+
+            const data = await streamChat(promptInfo, {
+                onToken: (token) => {
+                    streamedReply += token
+                    appendToStreamingBotMessage(token)
+                    speechSessionRef.current?.pushText(token)
+                },
+            })
+
+            speechSessionRef.current?.complete()
+
+            const reply = data?.content || streamedReply
+            const assistantMessage = { role: "assistant", content: reply }
+            addMessages(assistantMessage)
+            finalizeStreamingBotMessage(reply)
+        } catch (error) {
+                console.error("Chat request failed:", error)
+            finalizeStreamingBotMessage()
+                setLoading(false)
+        } finally {
             setLoading(false)
-        })
-        .catch((error) => {
-            console.log(error)
-    
-        })
-    }
-
-    function speak(text) {
-        if (!voiceEnabled) return
-
-        webSpeechTextToSpeech.cancel()
-        webSpeechTextToSpeech.speak(text, {
-            language: i18n.language,
-            onStart: () => {
-                setIsSpeaking(true)
-            },
-            onEnd: () => {
-                setIsSpeaking(false)
-            },
-            onError: () => {
-                setIsSpeaking(false)
-            },
-        })
+        }
     }
 
     return (

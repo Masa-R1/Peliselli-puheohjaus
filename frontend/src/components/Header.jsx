@@ -1,7 +1,7 @@
 import logo from "../assets/samk-bubble.png";
 import ModelSelect from "./ModelSelect";
 import { useStateStore } from "../stores/useStateStore";
-import "../voiceIndicator.css"
+import "../styles/ellipsis-anim.css"
 import LanguageSelect from "./LanguageSelector";
 import UISelector from "./UISelector";
 
@@ -21,8 +21,9 @@ function Header() {
                 <ModelSelect />
 
                 <LanguageSelect />
-                
+
                 <UISelector />
+
                 {/* <div className="speaking-indicator">
                     <div className={glow-ball }></div>
                 </div> */}

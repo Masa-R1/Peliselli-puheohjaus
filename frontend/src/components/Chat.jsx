@@ -3,13 +3,14 @@ import { useStateStore } from "../stores/useStateStore"
 import { useConversationStore } from "../stores/useConversationStore"
 import ReactMarkdown from "react-markdown";
 import logo from "../assets/samk-bubble.png";
-import "../ellipsis-anim.css"
+import "../styles/ellipsis-anim.css"
 
 function Chat() {
     const { loading } = useStateStore()
     const { setLoading } = useStateStore()
 
     const { conversationMessages } = useConversationStore()
+    const hasStreamingBotMessage = conversationMessages.some((msg) => msg.sender === "bot" && msg.streaming)
 
     const chatboxRef = useRef(null);
 
@@ -72,7 +73,7 @@ function Chat() {
                 </div>
             ))}
 
-            {loading && (
+            {loading && !hasStreamingBotMessage && (
                 <div className="message bot typing">
                     <img
                         src={logo}
