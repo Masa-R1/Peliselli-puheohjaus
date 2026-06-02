@@ -255,7 +255,7 @@ async def stream_agent(prompt: str, history: Optional[list[dict[str, str]]] = No
     global agent
     if agent is None:
         await init_agent()
-    
+
     messages = history[:] if history else []
     messages.append({"role": "user", "content": prompt})
 
