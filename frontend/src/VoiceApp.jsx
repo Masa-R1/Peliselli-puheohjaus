@@ -15,7 +15,6 @@ import UISelector from "./components/UISelector"
 import useSound from 'use-sound'
 import notifySound from "./assets/sound/278142__ricemaster__effect_notify.wav"
 import LanguageSelect from "./components/LanguageSelector"
-import UISelector from "./components/UISelector"
 
 const WAITING = "Awaiting activation..."
 const THINK_PHRASES = ["Thinking...", "Calculating...", "Pondering...", "Analyzing...", "Reflecting...", "Generating slop..."]
