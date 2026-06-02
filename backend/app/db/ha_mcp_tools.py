@@ -21,5 +21,5 @@ async def get_tools():
     )
     
     tools = await client.get_tools()
-    
+
     return tools
