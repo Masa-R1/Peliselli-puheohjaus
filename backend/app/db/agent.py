@@ -149,7 +149,10 @@ async def build_agent():
         get_model_information
     ]
 
-    tools = ha_tools + local_tools
+    if not ha_tools:
+        tools = local_tools
+    else:
+        tools = ha_tools + local_tools
 
     agent = create_agent(
         model=model_manager.selected_model,
