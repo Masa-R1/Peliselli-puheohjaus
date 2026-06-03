@@ -8,6 +8,9 @@ HA_BASE_URL = os.getenv("HA_BASE_URL")
 HA_ACCESS_TOKEN = os.getenv("HA_ACCESS_TOKEN")
 
 async def get_tools():
+    if not HA_BASE_URL or not HA_ACCESS_TOKEN:
+        return False
+
     client = MultiServerMCPClient(
         {
             "home_assistant": {

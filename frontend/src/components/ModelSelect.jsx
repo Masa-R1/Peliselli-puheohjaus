@@ -11,15 +11,20 @@ function ModelSelect() {
     } = useModelStore()
 
     useEffect(() => {
-        fetch(apiUrl("/chat"))
-		.then((respose) => respose.json())
-		.then(data => {
-			setModels(data)
-			setSelectedModel(data[0])
-		})
-		.catch((error) => {
-			console.log(error)
-        })
+		const interval = setInterval(() => {
+			fetch(apiUrl("/chat"))
+			.then((respose) => respose.json())
+			.then(data => {
+				setModels(data)
+                setSelectedModel(data[0])
+                clearInterval(interval)
+			})
+			.catch((error) => {
+				console.log(error)
+			})
+		}, 2000)
+
+		return () => clearInterval(interval)
 	}, [])
 
     return (
