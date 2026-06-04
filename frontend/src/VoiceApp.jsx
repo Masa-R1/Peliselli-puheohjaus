@@ -64,7 +64,7 @@ export default function VoiceApp() {
         haListening, 
         setHaListening 
     } = useStateStore()
-    const { messages, addMessages } = useMessageStore()
+    const { messages, addMessages, loadSystemMessage } = useMessageStore()
     const { 
         addConversationMessages, 
         startStreamingBotMessage, 
@@ -368,6 +368,7 @@ export default function VoiceApp() {
                                 if (listeningEnabledRef.current && !loadingRef.current && !speakingRef.current) {
                                     startRecognition()
                                 }
+                                loadSystemMessage() // re-load system message to reset context after follow-up window closes
                             }, FOLLOWUP_TIMEOUT_MS)
                         }
                     },
