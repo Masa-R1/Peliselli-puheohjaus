@@ -335,6 +335,13 @@ export default function VoiceApp() {
         }
     }
 
+    function clearFollowUpTimeout() {
+        if (followUpTimeoutRef.current) {
+            clearTimeout(followUpTimeoutRef.current)
+            followUpTimeoutRef.current = null
+        }
+    }
+
     async function sendToBackend(commandText) {
         const message = commandText.trim()
         if (!message || loadingRef.current) return
@@ -342,6 +349,8 @@ export default function VoiceApp() {
         const userMessage = { role: "user", content: message }
         addMessages(userMessage)
         addConversationMessages(message, "user")
+        followUpModeRef.current = false
+        clearFollowUpTimeout()
         // stop recognition now; speak.onend will restart and enable follow-up window
         stopRecognition()
         setLoading(true)
@@ -361,7 +370,7 @@ export default function VoiceApp() {
                             // restart recognition and open follow-up window
                             startRecognition()
                             followUpModeRef.current = true
-                            if (followUpTimeoutRef.current) clearTimeout(followUpTimeoutRef.current)
+                            clearFollowUpTimeout()
                             followUpTimeoutRef.current = setTimeout(() => {
                                 followUpModeRef.current = false
                                 setStatusText(WAITING)
@@ -417,10 +426,7 @@ export default function VoiceApp() {
             // If backend fails, `speak` is never called, so restore recognition here.
             if (listeningEnabledRef.current && !speakingRef.current) {
                 followUpModeRef.current = false
-                if (followUpTimeoutRef.current) {
-                    clearTimeout(followUpTimeoutRef.current)
-                    followUpTimeoutRef.current = null
-                }
+                clearFollowUpTimeout()
                 startRecognition()
             }
         }
