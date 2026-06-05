@@ -10,14 +10,21 @@ import VoiceToggleListeningButton from "./components/VoiceToggleListeningButton"
 import ModelSelect from "./components/ModelSelect"
 import UISelector from "./components/UISelector"
 import { webSpeechTextToSpeech } from "./utils/textToSpeech"
-import { apiUrl, streamChat } from "./utils/api"
+import { apiUrl, streamChat, HA_ACCESS_TOKEN, HA_WS_API_URL } from "./utils/api"
 
 import useSound from 'use-sound'
 import notifySound from "./assets/sound/278142__ricemaster__effect_notify.wav"
 import LanguageSelect from "./components/LanguageSelector"
 
 const WAITING = "Awaiting activation..."
-const THINK_PHRASES = ["Thinking...", "Calculating...", "Pondering...", "Analyzing...", "Reflecting...", "Generating slop..."]
+const THINK_PHRASES = [
+    "Thinking...", 
+    "Calculating...", 
+    "Pondering...", 
+    "Analyzing...", 
+    "Reflecting...", 
+    "Generating slop..."
+]
 const FOLLOWUP_TIMEOUT_MS = 20000
 
 function normalizeSpeechForWakePhrase(text) {
@@ -64,14 +71,21 @@ export default function VoiceApp() {
         haListening, 
         setHaListening 
     } = useStateStore()
-    const { messages, addMessages, loadSystemMessage } = useMessageStore()
+    const { 
+        messages, 
+        addMessages, 
+        loadSystemMessage 
+    } = useMessageStore()
     const { 
         addConversationMessages, 
         startStreamingBotMessage, 
         appendToStreamingBotMessage, 
         finalizeStreamingBotMessage 
     } = useConversationStore()
-    const { models, selectedModel } = useModelStore()
+    const { 
+        models, 
+        selectedModel 
+    } = useModelStore()
 
     const [wakeListeningEnabled, setWakeListeningEnabled] = useState(true)
     const [awaitingCommand, setAwaitingCommand] = useState(false)
@@ -100,6 +114,7 @@ export default function VoiceApp() {
     const thinkPhraseRef = useRef("")
     const thinkIndexRef = useRef(0)
     const speechSessionRef = useRef(null)
+    const wsRef = useRef(null)
     //#endregion
 
     useEffect(() => {
@@ -285,37 +300,88 @@ export default function VoiceApp() {
         }
     }, [selectedModel, i18n.language])
 
-    // Hakee kuuntelun tilan
+    // Kuuntelun tilan hakeminen
     useEffect(() => {
-        // Polling pauses when awaiting backend response (loading) or while TTS speaking
-        const interval = setInterval(async () => {
-            try {
-                // Skip polling while waiting for /chat or while TTS speaking
-                if (loadingRef.current || speakingRef.current) return
+        const ws = new WebSocket(HA_WS_API_URL)
+        wsRef.current = ws
 
-                const res = await fetch(apiUrl("/voice"))
-                const data = await res.json()
-                setHaListening(data.enabled)
-                if (!data.enabled) {
-                    followUpModeRef.current = false
-                    if (followUpTimeoutRef.current) {
-                        clearTimeout(followUpTimeoutRef.current)
-                        followUpTimeoutRef.current = null
+        const llatoken = HA_ACCESS_TOKEN
+
+        ws.onmessage = (event) => {
+            const msg = JSON.parse(event.data);
+
+            if (msg.type === "auth_required") {
+                ws.send(JSON.stringify({
+                    type: "auth",
+                    access_token: llatoken
+                }))
+            }
+
+            if (msg.type === "auth_ok") {
+                ws.send(JSON.stringify({
+                    id: 1,
+                    type: "subscribe_trigger",
+                    trigger: {
+                        platform: "state",
+                        entity_id: "input_boolean.toggle_listening"
                     }
-                }
-            } catch (error) {
-                console.log(error)
+                }))
             }
-        }, 2000)
 
-        return () => {
-            clearInterval(interval)
-            if (followUpTimeoutRef.current) {
-                clearTimeout(followUpTimeoutRef.current)
-                followUpTimeoutRef.current = null
+            if (msg.type === "event" && msg.id === 1) {
+                const trigger = msg.event.variables.trigger
+                const newState = trigger.to_state?.state
+
+                console.log(newState)
+                
+                if (newState == "on") {
+                    setHaListening(true)
+                }
+                else {
+                    setHaListening(false)
+                }
             }
+
+            ws.onerror = (err) => console.error("WS error:", err)
+
+            return () => {
+                ws.close()
+            };
         }
     }, [])
+
+    // Hakee kuuntelun tilan
+    // useEffect(() => {
+    //     // Polling pauses when awaiting backend response (loading) or while TTS speaking
+    //     const interval = setInterval(async () => {
+    //         try {
+    //             // Skip polling while waiting for /chat or while TTS speaking
+    //             if (loadingRef.current || speakingRef.current) return
+
+    //             const res = await fetch(apiUrl("/voice"))
+    //             const data = await res.json()
+    //             console.log(data.enabled)
+    //             setHaListening(data.enabled)
+    //             if (!data.enabled) {
+    //                 followUpModeRef.current = false
+    //                 if (followUpTimeoutRef.current) {
+    //                     clearTimeout(followUpTimeoutRef.current)
+    //                     followUpTimeoutRef.current = null
+    //                 }
+    //             }
+    //         } catch (error) {
+    //             console.log(error)
+    //         }
+    //     }, 5000)
+
+    //     return () => {
+    //         clearInterval(interval)
+    //         if (followUpTimeoutRef.current) {
+    //             clearTimeout(followUpTimeoutRef.current)
+    //             followUpTimeoutRef.current = null
+    //         }
+    //     }
+    // }, [])
 
     function stopRecognition() {
         try {

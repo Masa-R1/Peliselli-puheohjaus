@@ -23,11 +23,6 @@ function Header() {
                 <LanguageSelect />
 
                 <UISelector />
-
-                {/* <div className="speaking-indicator">
-                    <div className={glow-ball }></div>
-                </div> */}
-
             </div>
         </header>
     );
