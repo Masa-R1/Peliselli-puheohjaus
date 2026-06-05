@@ -1,6 +1,8 @@
 const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000"
 export const HA_WS_API_URL = import.meta.env.VITE_HA_WS_API_URL
 export const HA_ACCESS_TOKEN = import.meta.env.VITE_HA_ACCESS_TOKEN
+export const HA_URL = import.meta.env.VITE_HA_URL
+export const ENTITY_ID = import.meta.env.VITE_ENTITY_ID
 
 export function apiUrl(path) {
     if (!backendUrl) {
