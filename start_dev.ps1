@@ -17,7 +17,7 @@ function Test-Port {
         $Port
     )
 
-    netstat -ano | Select-String ":$Port"
+    netstat -an | Select-String ":$Port"
 }
 
 if (-not (Test-Port -Port $fastapi_port)) {
