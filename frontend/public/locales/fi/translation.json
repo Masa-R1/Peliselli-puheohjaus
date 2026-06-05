@@ -1,5 +1,60 @@
 {
   "wakePhrase": "hei avustaja",
+  "common": {
+    "assistant": "Avustaja",
+    "logoAlt": "SAMK-botin logo",
+    "speechRecognitionUnsupported": "Puheentunnistus ei ole tuettu tässä selaimessa."
+  },
+  "navigation": {
+    "chat": "Chat",
+    "voice": "Puhe"
+  },
+  "actions": {
+    "startVoiceInput": "Aloita puheentunnistus",
+    "toggleVoiceOutput": "Vaihda puhesynteesi",
+    "sendMessage": "Lähetä viesti"
+  },
+  "chat": {
+    "title": "SAMK-botti",
+    "thinking": "Mietin",
+    "messagePlaceholder": "Viesti SAMK-botille...",
+    "noModelsLoaded": "Malleja ei ladattu",
+    "logoAlt": "SAMK-botin logo"
+  },
+  "voice": {
+    "title": "Puheavustaja",
+    "thinkPhrases": [
+      "Mietin...",
+      "Lasken...",
+      "Pohdin...",
+      "Analysoin...",
+      "Reflektoin...",
+      "Tuotan suttua..."
+    ],
+    "status": {
+      "waiting": "Odotan aktivointia...",
+      "wakeListenerDisabled": "Herätesanan kuuntelu pois käytöstä",
+      "sendingFollowUp": "Lähetän jatkokomennon...",
+      "awaitingResponse": "Odotan vastausta...",
+      "activationDetectedSending": "Aktivointi havaittu, lähetän komennon",
+      "activationDetectedSpeak": "Aktivointi havaittu, sano komento",
+      "waitingForResponse": "Odotan vastausta..."
+    },
+    "labels": {
+      "wakePhrase": "Herätesana",
+      "wakePhraseHeard": "Herätesana kuultu. Sano komento nyt.",
+      "heard": "Kuultu",
+      "reply": "Vastaus"
+    },
+    "errors": {
+      "recognitionError": "Puheentunnistusvirhe: {{error}}",
+      "backendFailed": "Taustapalvelimeen ei saatu yhteyttä."
+    },
+    "buttons": {
+      "disableListening": "Poista kuuntelu käytöstä",
+      "enableListening": "Ota kuuntelu käyttöön"
+    }
+  },
   "systemMessage": "Olet avustaja, joka sijaitsee Pelisellissä SAMK:ssa (Satakunnan Ammattikorkeakoulu) Suomessa, ja joka käyttää työkaluja aina, kun mahdollista. Kehotteet tulevat puheentunnistuksesta, joten ne saattavat olla epätäydellisiä tai sisältää virheitä. Jos kehotteessa on puutteita, pyydä tarkennusta sen sijaan, että tekisit oletuksia.  Pidä vastaukset lyhyinä ja ytimekkäinä. Puhu ainoastaan suomea."
 }
   

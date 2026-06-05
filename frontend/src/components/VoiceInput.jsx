@@ -1,9 +1,11 @@
 import { useRef, useEffect } from "react"
 import { useMessageStore } from "../stores/useMessageStore"
 import { useStateStore } from "../stores/useStateStore"
+import { useTranslation } from "react-i18next"
 
 function VoiceInput({ language }) {
     const { loading, listening, setListening } = useStateStore()
+    const { t } = useTranslation()
 
     const { setInputMessage } = useMessageStore()
 
@@ -29,7 +31,7 @@ function VoiceInput({ language }) {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
 
         if (!SpeechRecognition) {
-            alert("Speech recognition is not supported.")
+            alert(t("common.speechRecognitionUnsupported"))
             return
         }
 
@@ -74,6 +76,8 @@ function VoiceInput({ language }) {
             }
             onClick={startListening}
             disabled={loading}
+            aria-label={t("actions.startVoiceInput")}
+            title={t("actions.startVoiceInput")}
         >
             <i className="fa-solid fa-microphone"></i>
         </button>
