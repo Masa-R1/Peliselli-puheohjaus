@@ -4,15 +4,16 @@ import { useConversationStore } from "../stores/useConversationStore"
 import ReactMarkdown from "react-markdown";
 import logo from "../assets/samk-bubble.png";
 import "../styles/ellipsis-anim.css"
+import { useTranslation } from "react-i18next"
 
 function Chat() {
-    const { loading } = useStateStore()
-    const { setLoading } = useStateStore()
+    const { loading, setLoading } = useStateStore()
 
     const { conversationMessages } = useConversationStore()
     const hasStreamingBotMessage = conversationMessages.some((msg) => msg.sender === "bot" && msg.streaming)
 
     const chatboxRef = useRef(null);
+    const { t } = useTranslation()
 
     // Mitä!?
     // const checkMessage = (aiAnswer) => {
@@ -63,7 +64,7 @@ function Chat() {
                         <img
                             src={logo}
                             className="bot-chat-logo"
-                            alt="logo"
+                            alt={t("chat.logoAlt")}
                         />
                     )}
 
@@ -78,11 +79,11 @@ function Chat() {
                     <img
                         src={logo}
                         className="bot-chat-logo"
-                        alt="logo"
+                        alt={t("chat.logoAlt")}
                     />
 
                     <span className="text-bubble typing-text">
-                        Thinking
+                        {t("chat.thinking")}
                         <span className="dot">.</span>
                         <span className="dot">.</span>
                         <span className="dot">.</span>

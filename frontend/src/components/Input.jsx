@@ -4,11 +4,10 @@ import { useMessageStore } from "../stores/useMessageStore"
 import { useConversationStore } from "../stores/useConversationStore"
 import { useModelStore } from "../stores/useModelStore"
 import VoiceInput from "./VoiceInput"
-import ReactMarkdown from "react-markdown"
 import { webSpeechTextToSpeech } from "../utils/textToSpeech"
 import { streamChat } from "../utils/api"
 import "../styles/app.css"
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next"
 
 function Input() {
     const { loading, setLoading, voiceEnabled, setVoiceEnabled, setIsSpeaking } = useStateStore()
@@ -19,7 +18,7 @@ function Input() {
 
     const { selectedModel } = useModelStore()
 
-    const { i18n } = useTranslation();
+    const { i18n, t } = useTranslation()
 
     const chatboxId = useId()
     const speechSessionRef = useRef(null)
@@ -105,25 +104,24 @@ function Input() {
 
     return (
         <div className="input-area">
-            {/* Voice Input */}
             <VoiceInput language={i18n.language} />
-            
-            {/* Text input */}
 
             <input
                 type="text"
                 id={chatboxId}
                 value={inputMessage}
-                placeholder="Message SAMK Bot..."
+                placeholder={t("chat.messagePlaceholder")}
                 onChange={(e) =>
                     setInputMessage(e.target.value)
                 }
                 onKeyDown={handleKeyDown}
                 disabled={loading}
             />
-            
-            {/* Voice Toggle */}
-            <button onClick={toggleVoice}>
+            <button
+                onClick={toggleVoice}
+                aria-label={t("actions.toggleVoiceOutput")}
+                title={t("actions.toggleVoiceOutput")}
+            >
             <i
                 className={
                     voiceEnabled
@@ -132,12 +130,12 @@ function Input() {
                 }
             />
             </button>
-            
-            {/* Send */}
             <button
                 onClick={sendMessage}
                 disabled={loading}
-                >
+                aria-label={t("actions.sendMessage")}
+                title={t("actions.sendMessage")}
+            >
                 <i className="fa-solid fa-arrow-up"></i>
             </button>
         </div>

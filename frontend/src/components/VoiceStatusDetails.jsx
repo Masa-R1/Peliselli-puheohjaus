@@ -1,4 +1,5 @@
 import ReactMarkdown from "react-markdown"
+import { useTranslation } from "react-i18next"
 
 function VoiceStatusDetails({
     wakePhrase,
@@ -8,28 +9,30 @@ function VoiceStatusDetails({
     lastReply,
     errorText,
 }) {
+    const { t } = useTranslation()
+
     return (
         <>
             <p style={{ margin: 0, opacity: 0.85, textAlign: "center" }}>
-                Wake phrase: "{wakePhrase}"
+                {t("voice.labels.wakePhrase")}: "{wakePhrase}"
             </p>
-            <p style={{ margin: 0, opacity: 0.9, textAlign: "center" }}>{statusText}</p>
+            <p style={{ margin: 0, opacity: 0.9, textAlign: "center" }}>{t(statusText)}</p>
 
             {awaitingCommand && (
                 <p style={{ margin: 0, color: "#7ce7ff", textAlign: "center" }}>
-                    Wake phrase heard. Speak your command now.
+                    {t("voice.labels.wakePhraseHeard")}
                 </p>
             )}
 
             {lastHeard && (
                 <p style={{ margin: 0, maxWidth: "720px", textAlign: "center" }}>
-                    Heard: {lastHeard}
+                    {t("voice.labels.heard")}: {lastHeard}
                 </p>
             )}
 
             {lastReply && (
                 <div style={{ margin: 0, maxWidth: "720px", textAlign: "center" }}>
-                    Reply: <ReactMarkdown>{lastReply}</ReactMarkdown>
+                    {t("voice.labels.reply")}: <ReactMarkdown>{lastReply}</ReactMarkdown>
                 </div>
             )}
 

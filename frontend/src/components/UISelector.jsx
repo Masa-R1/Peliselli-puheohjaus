@@ -1,8 +1,10 @@
 import { useNavigate, useLocation } from "react-router";
+import { useTranslation } from "react-i18next"
 
 export default function UISelector() {
     const navigate = useNavigate();
     const location = useLocation();
+    const { t } = useTranslation()
 
     const isVoiceApp = location.pathname !== "/chatbotapp";
 
@@ -24,7 +26,7 @@ export default function UISelector() {
                 marginLeft: "15px"
             }}
         >
-            {isVoiceApp ? "Chat" : "Voice"}
+            {isVoiceApp ? t("navigation.chat") : t("navigation.voice")}
         </button>
     );
 }

@@ -1,14 +1,15 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useModelStore } from "../stores/useModelStore";
 import { apiUrl } from "../utils/api";
+import { useTranslation } from "react-i18next"
 
 function ModelSelect() {
     const { 
         models, 
         setModels, 
-        setSelectedModel, 
-        selectedModel 
+        setSelectedModel 
     } = useModelStore()
+    const { t } = useTranslation()
 
     useEffect(() => {
 		const interval = setInterval(() => {
@@ -44,7 +45,7 @@ function ModelSelect() {
                 }}
             >
                 {models.length === 0 ? (
-                    <option value="">No models loaded</option>
+                    <option value="">{t("chat.noModelsLoaded")}</option>
                 ) : (
                     models.map((model, index) => (
                        <option key={index} value={model}>{model}</option>

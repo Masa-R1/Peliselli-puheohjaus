@@ -6,7 +6,6 @@ import { useConversationStore } from "./stores/useConversationStore"
 import { useModelStore } from "./stores/useModelStore"
 import VoiceAvatar from "./components/VoiceAvatar"
 import VoiceStatusDetails from "./components/VoiceStatusDetails"
-import VoiceToggleListeningButton from "./components/VoiceToggleListeningButton"
 import ModelSelect from "./components/ModelSelect"
 import UISelector from "./components/UISelector"
 import { webSpeechTextToSpeech } from "./utils/textToSpeech"
@@ -16,8 +15,7 @@ import useSound from 'use-sound'
 import notifySound from "./assets/sound/278142__ricemaster__effect_notify.wav"
 import LanguageSelect from "./components/LanguageSelector"
 
-const WAITING = "Awaiting activation..."
-const THINK_PHRASES = ["Thinking...", "Calculating...", "Pondering...", "Analyzing...", "Reflecting...", "Generating slop..."]
+const WAITING_STATUS_KEY = "voice.status.waiting"
 const FOLLOWUP_TIMEOUT_MS = 20000
 
 function normalizeSpeechForWakePhrase(text) {
@@ -71,19 +69,23 @@ export default function VoiceApp() {
         appendToStreamingBotMessage, 
         finalizeStreamingBotMessage 
     } = useConversationStore()
-    const { models, selectedModel } = useModelStore()
+    const { selectedModel } = useModelStore()
 
     const [wakeListeningEnabled, setWakeListeningEnabled] = useState(true)
     const [awaitingCommand, setAwaitingCommand] = useState(false)
-    const [statusText, setStatusText] = useState(WAITING)
+    const [statusKey, setStatusKey] = useState(WAITING_STATUS_KEY)
     const [lastHeard, setLastHeard] = useState("")
     const [lastReply, setLastReply] = useState("")
     const [errorText, setErrorText] = useState("")
-    const [thinkText, setThinkText] = useState("Assistant")
+    const [thinkText, setThinkText] = useState(t("common.assistant"))
     const normalizedWakePhrase = useMemo(
         () => normalizeSpeechForWakePhrase(t("wakePhrase")),
         [t]
     )
+    const thinkPhrases = useMemo(() => {
+        const phrases = t("voice.thinkPhrases", { returnObjects: true })
+        return Array.isArray(phrases) && phrases.length > 0 ? phrases : [t("chat.thinking")]
+    }, [t])
 
     //#region Refs
     const recognitionRef = useRef(null)
@@ -109,7 +111,7 @@ export default function VoiceApp() {
     useEffect(() => {
         listeningEnabledRef.current = haListening
         if (!(haListening && wakeListeningEnabled)) {
-            setStatusText("Wake listener disabled")
+            setStatusKey("voice.status.wakeListenerDisabled")
             setAwaitingCommand(false)
             awaitingCommandRef.current = false
             stopRecognition()
@@ -117,7 +119,7 @@ export default function VoiceApp() {
         }
 
         if (loadingRef.current || speakingRef.current) return
-        setStatusText(WAITING)
+        setStatusKey(WAITING_STATUS_KEY)
         startRecognition()
     }, [haListening, wakeListeningEnabled])
 
@@ -131,13 +133,13 @@ export default function VoiceApp() {
             clearTimeout(thinkPauseRef.current)
             thinkPhraseRef.current = ""
             thinkIndexRef.current = 0
-            setThinkText("Assistant")
+            setThinkText(t("common.assistant"))
             return
         }
 
         function pickNextThinkPhrase() {
-            const options = THINK_PHRASES.filter((phrase) => phrase !== thinkPhraseRef.current)
-            const pool = options.length > 0 ? options : THINK_PHRASES
+            const options = thinkPhrases.filter((phrase) => phrase !== thinkPhraseRef.current)
+            const pool = options.length > 0 ? options : thinkPhrases
             return pool[Math.floor(Math.random() * pool.length)]
         }
 
@@ -171,7 +173,7 @@ export default function VoiceApp() {
             clearInterval(thinkIntervalRef.current)
             clearTimeout(thinkPauseRef.current)
         }
-    }, [loading])
+    }, [loading, thinkPhrases, t])
 
     const clearErrorTimeoutRef = useRef(null);
     
@@ -179,7 +181,7 @@ export default function VoiceApp() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
 
         if (!SpeechRecognition) {
-            setErrorText("Speech recognition is not supported in this browser.")
+            setErrorText(t("common.speechRecognitionUnsupported"))
             setWakeListeningEnabled(false)
             setListening(false)
             return
@@ -193,7 +195,7 @@ export default function VoiceApp() {
         recognition.onstart = () => {
             setListening(true)
             if (listeningEnabledRef.current) {
-                setStatusText("Awaiting activation...")
+                setStatusKey(WAITING_STATUS_KEY)
             }
         }
 
@@ -209,7 +211,7 @@ export default function VoiceApp() {
 
         recognition.onerror = (event) => {
             setListening(false)
-            setErrorText(`Recognition error: ${event.error}`)
+            setErrorText(t("voice.errors.recognitionError", { error: event.error }))
 
             if (clearErrorTimeoutRef.current != null) {
                 clearTimeout(clearErrorTimeoutRef.current);
@@ -240,7 +242,7 @@ export default function VoiceApp() {
 
                 // Follow-up mode: treat any speech as immediate command
                 if (followUpModeRef.current) {
-                    setStatusText("Sending follow-up command...")
+                    setStatusKey("voice.status.sendingFollowUp")
                     stopRecognition()
                     await sendToBackend(transcript)
                     continue
@@ -249,7 +251,7 @@ export default function VoiceApp() {
                 if (awaitingCommandRef.current) {
                     awaitingCommandRef.current = false
                     setAwaitingCommand(false)
-                    setStatusText("Awaiting response...")
+                    setStatusKey("voice.status.awaitingResponse")
                     stopRecognition()
                     await sendToBackend(transcript)
                     continue
@@ -261,7 +263,7 @@ export default function VoiceApp() {
                 playNotify();
 
                 if (command) {
-                    setStatusText("Activation detected, sending command")
+                    setStatusKey("voice.status.activationDetectedSending")
                     stopRecognition()
                     await sendToBackend(command)
                     continue
@@ -269,7 +271,7 @@ export default function VoiceApp() {
 
                 awaitingCommandRef.current = true
                 setAwaitingCommand(true)
-                setStatusText("Activation detected, say your command")
+                setStatusKey("voice.status.activationDetectedSpeak")
             }
         }
 
@@ -354,7 +356,7 @@ export default function VoiceApp() {
         // stop recognition now; speak.onend will restart and enable follow-up window
         stopRecognition()
         setLoading(true)
-        setStatusText("Waiting for response...")
+        setStatusKey("voice.status.waitingForResponse")
 
         try {
             speechSessionRef.current?.cancel()
@@ -373,7 +375,7 @@ export default function VoiceApp() {
                             clearFollowUpTimeout()
                             followUpTimeoutRef.current = setTimeout(() => {
                                 followUpModeRef.current = false
-                                setStatusText(WAITING)
+                                setStatusKey(WAITING_STATUS_KEY)
                                 if (listeningEnabledRef.current && !loadingRef.current && !speakingRef.current) {
                                     startRecognition()
                                 }
@@ -415,12 +417,12 @@ export default function VoiceApp() {
             addMessages(assistantMessage)
             finalizeStreamingBotMessage(finalReply)
             setLastReply(finalReply)
-            setStatusText(WAITING)
+            setStatusKey(WAITING_STATUS_KEY)
         } catch (error) {
             console.error(error)
             finalizeStreamingBotMessage()
-            setErrorText("Failed to contact backend.")
-            setStatusText(WAITING)
+            setErrorText(t("voice.errors.backendFailed"))
+            setStatusKey(WAITING_STATUS_KEY)
         } finally {
             setLoading(false)
             // If backend fails, `speak` is never called, so restore recognition here.
@@ -472,7 +474,7 @@ export default function VoiceApp() {
                 padding: "1rem",
             }}
         >
-            <h1 style={{ margin: 0, fontSize: "1.15rem" }}>Voice Assistant</h1>
+            <h1 style={{ margin: 0, fontSize: "1.15rem" }}>{t("voice.title")}</h1>
 
             <LanguageSelect />
 
@@ -484,7 +486,7 @@ export default function VoiceApp() {
 
             <VoiceStatusDetails
                 wakePhrase={t("wakePhrase")}
-                statusText={statusText}
+                statusText={statusKey}
                 awaitingCommand={awaitingCommand}
                 lastHeard={lastHeard}
                 lastReply={lastReply}
