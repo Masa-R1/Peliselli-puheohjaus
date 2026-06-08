@@ -351,7 +351,7 @@ export default function VoiceApp() {
             // Haetaan alkutila
             if (msg.id === 2) {                
                 const entity = msg.result.find(
-                    e => e.entity_id === "input_boolean.toggle_listening"
+                    e => e.entity_id === ENTITY_ID
                 )
 
                 const intialState = entity?.state
@@ -451,6 +451,8 @@ export default function VoiceApp() {
                 // Keep recognition paused until full streamed TTS lifecycle completes.
                 speakingRef.current = true
             }
+
+            console.log(selectedModel)
 
             const promptInfo = {
                 model: selectedModel,

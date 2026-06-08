@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useModelStore } from "../stores/useModelStore";
 import { apiUrl } from "../utils/api";
 import { useTranslation } from "react-i18next"
@@ -7,17 +7,24 @@ function ModelSelect() {
     const { 
         models, 
         setModels, 
+        selectedModel,
         setSelectedModel 
     } = useModelStore()
     const { t } = useTranslation()
+
+    const intialFetchRef = useRef(true)
 
     useEffect(() => {
 		const interval = setInterval(() => {
 			fetch(apiUrl("/chat"))
 			.then((respose) => respose.json())
 			.then(data => {
-				setModels(data)
-                setSelectedModel(data[0])
+                // purkka
+				if (intialFetchRef.current) {
+                    setModels(data)
+                    setSelectedModel(data[0])
+                    intialFetchRef.current = false
+                }
                 clearInterval(interval)
 			})
 			.catch((error) => {
@@ -29,11 +36,12 @@ function ModelSelect() {
 	}, [])
 
     return (
-        <div style={{paddingLeft:15}}>
+        <div>
             <label htmlFor="select-model"></label>
             <select 
                 name="select-model"
                 id="select-model"
+                value={selectedModel}
                 onChange={(e) => {
                     setSelectedModel(e.target.value)
                 }}
