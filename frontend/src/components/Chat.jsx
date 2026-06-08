@@ -15,34 +15,6 @@ function Chat() {
     const chatboxRef = useRef(null);
     const { t } = useTranslation()
 
-    // Mitä!?
-    // const checkMessage = (aiAnswer) => {
-    //     const settingKeywords = ["changing", "switching", "making"]
-
-    //     const colorKeywords = ["red", "green", "blue", "yellow", "purple"]
-
-    //     aiAnswer = aiAnswer.toLowerCase().split(" ")
-
-    //     const overlap = settingKeywords.some(item => aiAnswer.includes(item))
-
-    //     if (overlap) {
-    //         const findColor = colorKeywords.find(value => aiAnswer.includes(value))
-
-    //         if (colorMatch !== undefined) {
-    //             switch (colorMatch) {
-    //                 case "red":
-    //                     console.log(colorMatch)
-    //                     break;
-    //                 case "green":
-    //                     console.log(colorMatch)
-    //                     break;
-    //                 default:
-    //                     break;
-    //             }
-    //         }
-    //     }
-    // }
-
     // Auto-scroll
     useEffect(() => {
         if (chatboxRef.current) {

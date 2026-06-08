@@ -9,7 +9,7 @@ import VoiceStatusDetails from "./components/VoiceStatusDetails"
 import ModelSelect from "./components/ModelSelect"
 import UISelector from "./components/UISelector"
 import { webSpeechTextToSpeech } from "./utils/textToSpeech"
-import { apiUrl, streamChat } from "./utils/api"
+import { apiUrl, streamChat, HA_ACCESS_TOKEN, HA_WS_API_URL, HA_URL, ENTITY_ID } from "./utils/api"
 import { normalizeFrontendLanguage } from "./utils/frontendLanguage"
 
 import useSound from 'use-sound'
@@ -63,7 +63,11 @@ export default function VoiceApp() {
         haListening, 
         setHaListening 
     } = useStateStore()
-    const { messages, addMessages, loadSystemMessage } = useMessageStore()
+    const { 
+        messages, 
+        addMessages, 
+        loadSystemMessage 
+    } = useMessageStore()
     const { 
         addConversationMessages, 
         startStreamingBotMessage, 
@@ -103,6 +107,7 @@ export default function VoiceApp() {
     const thinkPhraseRef = useRef("")
     const thinkIndexRef = useRef(0)
     const speechSessionRef = useRef(null)
+    const wsRef = useRef(null)
     //#endregion
 
     useEffect(() => {
@@ -288,37 +293,91 @@ export default function VoiceApp() {
         }
     }, [selectedModel, i18n.language])
 
-    // Hakee kuuntelun tilan
+    // #region Kuuntelun tila
+    function checkENVvariables() {
+        if (HA_WS_API_URL === undefined || HA_ACCESS_TOKEN === undefined || HA_URL === undefined) {
+            console.log("Home Assistant address not found, check .env")
+            
+            // devaamista varten true, että toimii ilman home assistanttia
+            // muuten olis varmaan false
+            setHaListening(true)
+            return false
+        }
+        return true
+    }
+    
+    // Kuuntelee tilan vaihtumis eventtiä
     useEffect(() => {
-        // Polling pauses when awaiting backend response (loading) or while TTS speaking
-        const interval = setInterval(async () => {
-            try {
-                // Skip polling while waiting for /chat or while TTS speaking
-                if (loadingRef.current || speakingRef.current) return
+        if (!checkENVvariables()) return
 
-                const res = await fetch(apiUrl("/voice"))
-                const data = await res.json()
-                setHaListening(data.enabled)
-                if (!data.enabled) {
-                    followUpModeRef.current = false
-                    if (followUpTimeoutRef.current) {
-                        clearTimeout(followUpTimeoutRef.current)
-                        followUpTimeoutRef.current = null
+        function checkHAState(state) {
+            if (state == "on") {
+                return true
+            }
+            return false
+        }
+
+        const ws = new WebSocket(HA_WS_API_URL)
+
+        wsRef.current = ws
+
+        const llatoken = HA_ACCESS_TOKEN
+
+        ws.onmessage = (event) => {
+            const msg = JSON.parse(event.data);
+
+            if (msg.type === "auth_required") {
+                ws.send(JSON.stringify({
+                    type: "auth",
+                    access_token: llatoken
+                }))
+            }
+
+            if (msg.type === "auth_ok") {
+                ws.send(JSON.stringify({
+                    id: 1,
+                    type: "subscribe_trigger",
+                    trigger: {
+                        platform: "state",
+                        entity_id: ENTITY_ID
                     }
-                }
-            } catch (error) {
-                console.log(error)
+                }))
+                ws.send(JSON.stringify({
+                    id: 2,
+                    type: "get_states"
+                }))
             }
-        }, 2000)
+            
+            // Haetaan alkutila
+            if (msg.id === 2) {                
+                const entity = msg.result.find(
+                    e => e.entity_id === "input_boolean.toggle_listening"
+                )
 
-        return () => {
-            clearInterval(interval)
-            if (followUpTimeoutRef.current) {
-                clearTimeout(followUpTimeoutRef.current)
-                followUpTimeoutRef.current = null
+                const intialState = entity?.state
+
+                setHaListening(checkHAState(intialState))
             }
+
+            if (msg.type === "event" && msg.id === 1) {
+                const trigger = msg.event.variables.trigger
+                const newState = trigger.to_state?.state
+
+                setHaListening(checkHAState(newState))
+            }
+
+            ws.onerror = (err) => {
+                console.error("WS error:", err)
+                // myös devaamista varten true
+                setHaListening(true)
+            }
+
+            return () => {
+                ws.close()
+            };
         }
     }, [])
+    // #endregion
 
     function stopRecognition() {
         try {

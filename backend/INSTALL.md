@@ -22,7 +22,7 @@ Tai `uv` (jos käytössä)
 integraatio (https://www.home-assistant.io/integrations/mcp_server/)
 
 2. Valitse paljastettavaksi kaikki ne entiteetit, joihin haluat tekoälyn 
-pääsevän käsiksi. Ohjeet löytyvät myös edellä olevasta linkistä
+pääsevän käsiksi. Ohjeet löytyvät aikaisemmasta linkistä
 
 3. Lisää `.env` tiedostoon muuttujat `HA_BASE_URL`, johon tulee Home Assistantin 
 osoite ja `HA_ACCESS_TOKEN`, johon tulee  HA:n Long-lived access token
