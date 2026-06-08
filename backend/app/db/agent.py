@@ -106,6 +106,7 @@ from .tools.get_current_lunch_at_samk_silvia import get_current_lunch_at_samk_si
 from .tools.get_chuck_norris_joke import get_chuck_norris_joke
 from .tools.get_date_and_time import get_date_and_time
 from .tools.get_weather_for_area import get_weather_for_area
+from .tools.set_frontend_language import set_frontend_language
 
 @tool
 def get_model_information(model_name: str) -> str:
@@ -146,6 +147,7 @@ async def build_agent():
         get_chuck_norris_joke, 
         get_date_and_time, 
         get_weather_for_area,
+        set_frontend_language,
         get_model_information
     ]
 

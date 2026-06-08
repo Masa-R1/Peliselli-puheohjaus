@@ -10,6 +10,7 @@ import ModelSelect from "./components/ModelSelect"
 import UISelector from "./components/UISelector"
 import { webSpeechTextToSpeech } from "./utils/textToSpeech"
 import { apiUrl, streamChat } from "./utils/api"
+import { normalizeFrontendLanguage } from "./utils/frontendLanguage"
 
 import useSound from 'use-sound'
 import notifySound from "./assets/sound/278142__ricemaster__effect_notify.wav"
@@ -411,6 +412,11 @@ export default function VoiceApp() {
             })
 
             speechSessionRef.current?.complete()
+
+            const uiLanguage = normalizeFrontendLanguage(data?.uiLanguage)
+            if (uiLanguage && uiLanguage !== i18n.resolvedLanguage) {
+                void i18n.changeLanguage(uiLanguage)
+            }
 
             const finalReply = data?.content || streamedReply
             const assistantMessage = { role: "assistant", content: finalReply }

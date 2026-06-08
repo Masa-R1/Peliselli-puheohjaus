@@ -1,17 +1,22 @@
-import { useId } from "react"
+import { useEffect, useId } from "react"
 import { useTranslation } from "react-i18next";
+import { syncFrontendLanguage } from "../utils/frontendLanguage";
 
 export default function LanguageSelector() {
     const { i18n } = useTranslation();
 
-    const currentLng = i18n.language;
-    const supportedLngs = i18n.options.supportedLngs.filter(lng => lng !== 'cimode');
+    const currentLng = i18n.resolvedLanguage || i18n.language;
+    const supportedLngs = (i18n.options.supportedLngs || []).filter(lng => lng !== 'cimode');
 
     const displayNames = new Intl.DisplayNames([currentLng], {
         type: 'language',
     });
 
     const selectorId = useId();
+
+    useEffect(() => {
+        void syncFrontendLanguage(currentLng).catch(() => {})
+    }, [currentLng])
 
     const languages = supportedLngs
     .map((lng) => ({
@@ -25,7 +30,9 @@ export default function LanguageSelector() {
             className="language-select"
             id={selectorId}
             value={currentLng}
-            onChange={(e) => i18n.changeLanguage(e.target.value)}
+            onChange={(e) => {
+                void i18n.changeLanguage(e.target.value)
+            }}
             style={{
                 background: "transparent",
                 border: "none",
