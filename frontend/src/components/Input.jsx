@@ -6,6 +6,7 @@ import { useModelStore } from "../stores/useModelStore"
 import VoiceInput from "./VoiceInput"
 import { webSpeechTextToSpeech } from "../utils/textToSpeech"
 import { streamChat } from "../utils/api"
+import { normalizeFrontendLanguage } from "../utils/frontendLanguage"
 import "../styles/app.css"
 import { useTranslation } from "react-i18next"
 
@@ -88,6 +89,11 @@ function Input() {
             })
 
             speechSessionRef.current?.complete()
+
+            const uiLanguage = normalizeFrontendLanguage(data?.uiLanguage)
+            if (uiLanguage && uiLanguage !== i18n.resolvedLanguage) {
+                void i18n.changeLanguage(uiLanguage)
+            }
 
             const reply = data?.content || streamedReply
             const assistantMessage = { role: "assistant", content: reply }

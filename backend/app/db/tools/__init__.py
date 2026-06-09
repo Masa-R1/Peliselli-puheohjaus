@@ -7,4 +7,5 @@ __all__ = [
     "get_chuck_norris_joke",
     "get_date_and_time",
     "get_weather_for_area",
+    "set_frontend_language",
 ]
