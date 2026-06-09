@@ -299,7 +299,6 @@ export default function VoiceApp() {
             console.log("Home Assistant address not found, check .env")
             
             // devaamista varten true, että toimii ilman home assistanttia
-            // muuten olis varmaan false
             setHaListening(true)
             return false
         }
@@ -371,8 +370,7 @@ export default function VoiceApp() {
 
         ws.onerror = (err) => {
             console.error("WS error:", err)
-            // myös devaamista varten true
-            setHaListening(true)
+            setHaListening(false)
         }
 
         return () => {
