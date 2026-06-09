@@ -311,9 +311,7 @@ export default function VoiceApp() {
         if (!checkENVvariables()) return
 
         function checkHAState(state) {
-            if (state == "on") {
-                return true
-            }
+            if (state == "on") return true
             return false
         }
 
@@ -365,16 +363,20 @@ export default function VoiceApp() {
 
                 setHaListening(checkHAState(newState))
             }
+        }
+        
+        ws.onclose = () => {
+            console.log("suljettu")
+        }
 
-            ws.onerror = (err) => {
-                console.error("WS error:", err)
-                // myös devaamista varten true
-                setHaListening(true)
-            }
+        ws.onerror = (err) => {
+            console.error("WS error:", err)
+            // myös devaamista varten true
+            setHaListening(true)
+        }
 
-            return () => {
-                ws.close()
-            };
+        return () => {
+            ws.close()
         }
     }, [])
     // #endregion
