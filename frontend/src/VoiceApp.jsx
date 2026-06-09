@@ -299,7 +299,6 @@ export default function VoiceApp() {
             console.log("Home Assistant address not found, check .env")
             
             // devaamista varten true, että toimii ilman home assistanttia
-            // muuten olis varmaan false
             setHaListening(true)
             return false
         }
@@ -309,17 +308,15 @@ export default function VoiceApp() {
     // Kuuntelee tilan vaihtumis eventtiä
     useEffect(() => {
         if (!checkENVvariables()) return
-        
-        console.log("WebSocket")
 
         function checkHAState(state) {
             if (state == "on") return true
             return false
         }
+        
+        let connected = false
 
-        function wsConnect(from) {
-            console.log("WebSocket2")
-
+        function wsConnect() {
             const ws = new WebSocket(HA_WS_API_URL)
 
             wsRef.current = ws
@@ -327,6 +324,8 @@ export default function VoiceApp() {
             const llatoken = HA_ACCESS_TOKEN
 
             ws.onmessage = (event) => {
+                connected = true
+
                 const msg = JSON.parse(event.data);
 
                 if (msg.type === "auth_required") {
@@ -368,30 +367,29 @@ export default function VoiceApp() {
 
                     setHaListening(checkHAState(newState))
                 }
+            }
 
-                // Jos HA sammuu, yritetään yhdistää uudelleen
-                ws.onclose = () => {
-                    let i = 0
-                    const onclose = true
+            // Jos HA sammuu tai on sammuksissa, yritetään yhdistää uudelleen
+            // Varmaan pitäisi olla tietty yritys määrä?
+            ws.onclose = () => {
+                console.log("HA: Ei saada yhteyttä. Yritetään yhdistään uudelleen...")
+                setHaListening(false)
+                const tryReConnect = setTimeout(() => {
+                    if (connected) {
+                        clearTimeout(tryReConnect)
+                    }
+                    wsConnect()
+                }, 10000)
+            }
 
-                    const tryReConnect = setTimeout(() => {
-                        console.log("Mitä mitä")
-                        wsConnect(onclose)
-                        
-                        
-                    }, 6000)
-                }
+            ws.onerror = (err) => {
+                console.error("WS error:", err)
+                connected = false
+                setHaListening(false)
+            }
 
-                ws.onerror = (err) => {
-                    console.error("WS error:", err)
-
-                    let i = 0
-                    
-                }
-
-                return () => {
-                    ws.close()
-                };
+            return () => {
+                ws.close()
             }
         }
 
