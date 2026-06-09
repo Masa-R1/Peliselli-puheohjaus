@@ -308,73 +308,93 @@ export default function VoiceApp() {
     // Kuuntelee tilan vaihtumis eventtiä
     useEffect(() => {
         if (!checkENVvariables()) return
+        
+        console.log("WebSocket")
 
         function checkHAState(state) {
-            if (state == "on") {
-                return true
-            }
+            if (state == "on") return true
             return false
         }
 
-        const ws = new WebSocket(HA_WS_API_URL)
+        function wsConnect(from) {
+            console.log("WebSocket2")
 
-        wsRef.current = ws
+            const ws = new WebSocket(HA_WS_API_URL)
 
-        const llatoken = HA_ACCESS_TOKEN
+            wsRef.current = ws
 
-        ws.onmessage = (event) => {
-            const msg = JSON.parse(event.data);
+            const llatoken = HA_ACCESS_TOKEN
 
-            if (msg.type === "auth_required") {
-                ws.send(JSON.stringify({
-                    type: "auth",
-                    access_token: llatoken
-                }))
+            ws.onmessage = (event) => {
+                const msg = JSON.parse(event.data);
+
+                if (msg.type === "auth_required") {
+                    ws.send(JSON.stringify({
+                        type: "auth",
+                        access_token: llatoken
+                    }))
+                }
+
+                if (msg.type === "auth_ok") {
+                    ws.send(JSON.stringify({
+                        id: 1,
+                        type: "subscribe_trigger",
+                        trigger: {
+                            platform: "state",
+                            entity_id: ENTITY_ID
+                        }
+                    }))
+                    ws.send(JSON.stringify({
+                        id: 2,
+                        type: "get_states"
+                    }))
+                }
+                
+                // Haetaan alkutila
+                if (msg.id === 2) {                
+                    const entity = msg.result.find(
+                        e => e.entity_id === ENTITY_ID
+                    )
+
+                    const intialState = entity?.state
+
+                    setHaListening(checkHAState(intialState))
+                }
+
+                if (msg.type === "event" && msg.id === 1) {
+                    const trigger = msg.event.variables.trigger
+                    const newState = trigger.to_state?.state
+
+                    setHaListening(checkHAState(newState))
+                }
+
+                // Jos HA sammuu, yritetään yhdistää uudelleen
+                ws.onclose = () => {
+                    let i = 0
+                    const onclose = true
+
+                    const tryReConnect = setTimeout(() => {
+                        console.log("Mitä mitä")
+                        wsConnect(onclose)
+                        
+                        
+                    }, 6000)
+                }
+
+                ws.onerror = (err) => {
+                    console.error("WS error:", err)
+
+                    let i = 0
+                    
+                }
+
+                return () => {
+                    ws.close()
+                };
             }
-
-            if (msg.type === "auth_ok") {
-                ws.send(JSON.stringify({
-                    id: 1,
-                    type: "subscribe_trigger",
-                    trigger: {
-                        platform: "state",
-                        entity_id: ENTITY_ID
-                    }
-                }))
-                ws.send(JSON.stringify({
-                    id: 2,
-                    type: "get_states"
-                }))
-            }
-            
-            // Haetaan alkutila
-            if (msg.id === 2) {                
-                const entity = msg.result.find(
-                    e => e.entity_id === "input_boolean.toggle_listening"
-                )
-
-                const intialState = entity?.state
-
-                setHaListening(checkHAState(intialState))
-            }
-
-            if (msg.type === "event" && msg.id === 1) {
-                const trigger = msg.event.variables.trigger
-                const newState = trigger.to_state?.state
-
-                setHaListening(checkHAState(newState))
-            }
-
-            ws.onerror = (err) => {
-                console.error("WS error:", err)
-                // myös devaamista varten true
-                setHaListening(true)
-            }
-
-            return () => {
-                ws.close()
-            };
         }
+
+        wsConnect()
     }, [])
     // #endregion
 
