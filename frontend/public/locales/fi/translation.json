@@ -19,6 +19,7 @@
     "thinking": "Mietin",
     "messagePlaceholder": "Viesti SAMK-botille...",
     "noModelsLoaded": "Malleja ei ladattu",
+    "loadingModels": "Ladataan malleja...",
     "logoAlt": "SAMK-botin logo"
   },
   "voice": {

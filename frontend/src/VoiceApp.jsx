@@ -74,7 +74,7 @@ export default function VoiceApp() {
         appendToStreamingBotMessage, 
         finalizeStreamingBotMessage 
     } = useConversationStore()
-    const { selectedModel } = useModelStore()
+    const { selectedModel, modelLoading } = useModelStore()
 
     const [wakeListeningEnabled, setWakeListeningEnabled] = useState(true)
     const [awaitingCommand, setAwaitingCommand] = useState(false)
@@ -116,6 +116,14 @@ export default function VoiceApp() {
 
     useEffect(() => {
         listeningEnabledRef.current = haListening
+        if (modelLoading) {
+            setStatusKey("voice.status.wakeListenerDisabled")
+            setAwaitingCommand(false)
+            awaitingCommandRef.current = false
+            stopRecognition()
+            return
+        }
+
         if (!(haListening && wakeListeningEnabled)) {
             setStatusKey("voice.status.wakeListenerDisabled")
             setAwaitingCommand(false)
@@ -127,11 +135,11 @@ export default function VoiceApp() {
         if (loadingRef.current || speakingRef.current) return
         setStatusKey(WAITING_STATUS_KEY)
         startRecognition()
-    }, [haListening, wakeListeningEnabled])
+    }, [haListening, wakeListeningEnabled, modelLoading])
 
     useEffect(() => {
-        loadingRef.current = loading
-    }, [loading])
+        loadingRef.current = loading || modelLoading
+    }, [loading, modelLoading])
 
     useEffect(() => {
         if (!loading) {

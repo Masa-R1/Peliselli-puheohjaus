@@ -8,23 +8,28 @@ function ModelSelect() {
         models, 
         setModels, 
         selectedModel,
-        setSelectedModel 
+        setSelectedModel,
+        modelLoading,
+        setModelLoading,
     } = useModelStore()
     const { t } = useTranslation()
 
     const intialFetchRef = useRef(true)
 
     useEffect(() => {
+        let isActive = true
+        setModelLoading(true)
 		const interval = setInterval(() => {
 			fetch(apiUrl("/chat"))
 			.then((respose) => respose.json())
 			.then(data => {
-                // purkka
+				if (!isActive) return
 				if (intialFetchRef.current) {
                     setModels(data)
-                    setSelectedModel(data[0])
+                    setSelectedModel(data[0] ?? "")
                     intialFetchRef.current = false
                 }
+                setModelLoading(false)
                 clearInterval(interval)
 			})
 			.catch((error) => {
@@ -32,8 +37,12 @@ function ModelSelect() {
 			})
 		}, 2000)
 
-		return () => clearInterval(interval)
-	}, [])
+        return () => {
+            isActive = false
+            setModelLoading(false)
+            clearInterval(interval)
+        }
+    }, [setModelLoading, setModels, setSelectedModel])
 
     return (
         <div>
@@ -42,6 +51,7 @@ function ModelSelect() {
                 name="select-model"
                 id="select-model"
                 value={selectedModel}
+                disabled={modelLoading}
                 onChange={(e) => {
                     setSelectedModel(e.target.value)
                 }}
@@ -52,7 +62,9 @@ function ModelSelect() {
                     textShadow: '0 0 4px #818bff' 
                 }}
             >
-                {models.length === 0 ? (
+                {modelLoading ? (
+                    <option value="">{t("chat.loadingModels")}</option>
+                ) : models.length === 0 ? (
                     <option value="">{t("chat.noModelsLoaded")}</option>
                 ) : (
                     models.map((model, index) => (

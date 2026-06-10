@@ -19,6 +19,7 @@
     "thinking": "Thinking",
     "messagePlaceholder": "Message SAMK Bot...",
     "noModelsLoaded": "No models loaded",
+    "loadingModels": "Loading models...",
     "logoAlt": "SAMK Bot logo"
   },
   "voice": {
