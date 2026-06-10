@@ -305,76 +305,87 @@ export default function VoiceApp() {
         return true
     }
     
-    // Kuuntelee tilan vaihtumis eventtiä
     useEffect(() => {
         if (!checkENVvariables()) return
 
-        function checkHAState(state) {
+        function checkEntityState(state) {
             if (state == "on") return true
             return false
         }
+        
+        const wsConnectTimeout = 10000
 
-        const ws = new WebSocket(HA_WS_API_URL)
+        let ws
+        let isMounted = true
 
-        wsRef.current = ws
+        function wsConnect() {
+            ws = new WebSocket(HA_WS_API_URL)
 
-        const llatoken = HA_ACCESS_TOKEN
+            wsRef.current = ws
 
-        ws.onmessage = (event) => {
-            const msg = JSON.parse(event.data);
+            const llatoken = HA_ACCESS_TOKEN
 
-            if (msg.type === "auth_required") {
-                ws.send(JSON.stringify({
-                    type: "auth",
-                    access_token: llatoken
-                }))
-            }
+            ws.onmessage = (event) => {
+                const msg = JSON.parse(event.data);
 
-            if (msg.type === "auth_ok") {
-                ws.send(JSON.stringify({
-                    id: 1,
-                    type: "subscribe_trigger",
-                    trigger: {
-                        platform: "state",
-                        entity_id: ENTITY_ID
-                    }
-                }))
-                ws.send(JSON.stringify({
-                    id: 2,
-                    type: "get_states"
-                }))
+                if (msg.type === "auth_required") {
+                    ws.send(JSON.stringify({
+                        type: "auth",
+                        access_token: llatoken
+                    }))
+                }
+
+                if (msg.type === "auth_ok") {
+                    ws.send(JSON.stringify({
+                        id: 1,
+                        type: "subscribe_trigger",
+                        trigger: {
+                            platform: "state",
+                            entity_id: ENTITY_ID
+                        }
+                    }))
+                    ws.send(JSON.stringify({
+                        id: 2,
+                        type: "get_states"
+                    }))
+                }
+                
+                // Haetaan alkutila
+                if (msg.id === 2) {                
+                    const entity = msg.result.find(
+                        e => e.entity_id === ENTITY_ID
+                    )
+
+                    const intialState = entity?.state
+
+                    setHaListening(checkEntityState(intialState))
+                }
+
+                if (msg.type === "event" && msg.id === 1) {
+                    const trigger = msg.event.variables.trigger
+                    const newState = trigger.to_state?.state
+
+                    setHaListening(checkEntityState(newState))
+                }
             }
             
-            // Haetaan alkutila
-            if (msg.id === 2) {                
-                const entity = msg.result.find(
-                    e => e.entity_id === ENTITY_ID
-                )
-
-                const intialState = entity?.state
-
-                setHaListening(checkHAState(intialState))
+            ws.onclose = () => {
+                if (!isMounted) return
+                console.log("Connection lost, retrying...")
+                setTimeout(wsConnect, wsConnectTimeout)
             }
 
-            if (msg.type === "event" && msg.id === 1) {
-                const trigger = msg.event.variables.trigger
-                const newState = trigger.to_state?.state
-
-                setHaListening(checkHAState(newState))
+            ws.onerror = (err) => {
+                console.error("WS error:", err)
+                setHaListening(false)
             }
         }
         
-        ws.onclose = () => {
-            console.log("suljettu")
-        }
-
-        ws.onerror = (err) => {
-            console.error("WS error:", err)
-            setHaListening(false)
-        }
+        wsConnect()
 
         return () => {
-            ws.close()
+            isMounted = false
+            ws?.close()
         }
     }, [])
     // #endregion
