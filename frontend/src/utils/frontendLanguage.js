@@ -1,6 +1,9 @@
 import { apiUrl } from "./api"
+import i18n from "../i18n"
 
-const SUPPORTED_FRONTEND_LANGUAGES = ["en", "fi"]
+function getSupportedFrontendLanguages() {
+    return (i18n.options.supportedLngs || []).filter((lng) => lng !== "cimode")
+}
 
 export function normalizeFrontendLanguage(language) {
     if (!language) {
@@ -12,12 +15,13 @@ export function normalizeFrontendLanguage(language) {
         return null
     }
 
+    const supported = getSupportedFrontendLanguages()
     const baseLanguage = normalized.split("-")[0]
-    if (SUPPORTED_FRONTEND_LANGUAGES.includes(baseLanguage)) {
+    if (supported.includes(baseLanguage)) {
         return baseLanguage
     }
 
-    if (SUPPORTED_FRONTEND_LANGUAGES.includes(normalized)) {
+    if (supported.includes(normalized)) {
         return normalized
     }
 

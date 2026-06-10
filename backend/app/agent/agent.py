@@ -8,7 +8,8 @@ import time
 from urllib.error import URLError
 from urllib.request import urlopen
 from langchain.tools import tool
-from .ha_mcp_tools import get_tools
+from .mcp_tools import get_tools as get_mcp_tools
+from .tools import get_tools as get_local_tools
 
 AGENT_TIMEOUT = 60
 
@@ -102,13 +103,6 @@ async def dynamic_model_selection(request: ModelRequest, handler) -> ModelRespon
     model_manager.refresh()
     return await handler(request.override(model=model_manager.selected_model))
 
-# Tools moved to separate modules
-from .tools.get_current_lunch_at_samk_silvia import get_current_lunch_at_samk_silvia
-from .tools.get_chuck_norris_joke import get_chuck_norris_joke
-from .tools.get_date_and_time import get_date_and_time
-from .tools.get_weather_for_area import get_weather_for_area
-from .tools.set_frontend_language import set_frontend_language
-
 @tool
 def get_model_information(model_name: str) -> str:
     """English: Tool to get information about you and other available models. 
@@ -141,21 +135,13 @@ def get_model_information(model_name: str) -> str:
 agent = None
 
 async def build_agent():
-    ha_tools = await get_tools()
-    
-    local_tools = [
-        get_current_lunch_at_samk_silvia, 
-        get_chuck_norris_joke, 
-        get_date_and_time, 
-        get_weather_for_area,
-        set_frontend_language,
-        get_model_information
-    ]
+    mcp_tools = await get_mcp_tools()
+    local_tools = [*get_local_tools(), get_model_information]
 
-    if not ha_tools:
+    if not mcp_tools:
         tools = local_tools
     else:
-        tools = ha_tools + local_tools
+        tools = mcp_tools + local_tools
 
     agent = create_agent(
         model=model_manager.selected_model,

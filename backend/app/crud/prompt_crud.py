@@ -1,5 +1,5 @@
-from ..db.models import ChatPrompt
-from ..db.agent import model_manager, stream_agent
+from ..agent.models import ChatPrompt
+from ..agent.agent import model_manager, stream_agent
 
 async def create_chat_stream(prompt: ChatPrompt):
     if prompt.model:

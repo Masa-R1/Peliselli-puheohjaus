@@ -1,8 +1,8 @@
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 import json
-from ..db.models import ChatPrompt
-from ..db.agent import model_manager
+from ..agent.models import ChatPrompt
+from ..agent.agent import model_manager
 from ..crud.frontend_language_crud import get_frontend_language
 from ..crud import prompt_crud as crud
 
