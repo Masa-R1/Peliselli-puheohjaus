@@ -60,10 +60,11 @@ class ModelManager:
             if parts:
                 name = parts[0]
                 models[name] = ChatOllama(
-                    model=name,  
-                    client_kwargs={
+                    model = name ,  
+                    client_kwargs = {
                         "timeout": httpx.Timeout(AGENT_TIMEOUT)
-                    }
+                    },
+                    reasoning = False
                 )
 
         return models
