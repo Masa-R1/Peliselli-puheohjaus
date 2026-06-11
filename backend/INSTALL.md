@@ -27,4 +27,6 @@ pääsevän käsiksi. Ohjeet löytyvät aikaisemmasta linkistä
 3. Lisää `.env` tiedostoon muuttujat `HA_BASE_URL`, johon tulee Home Assistantin 
 osoite ja `HA_ACCESS_TOKEN`, johon tulee  HA:n Long-lived access token
 
+Katso `.env.example` jos haluat katsoa mallia miltä `.env` tiedoston pitäisi näyttää
+
 Jos et halua käyttää Home Assistanttia, älä lisää `.env` tiedostoa.
