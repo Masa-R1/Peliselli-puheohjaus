@@ -1,15 +1,18 @@
+import json
+import os
 import httpx
+from dotenv import load_dotenv
+from ollama import Client as OllamaClient
 from langchain_ollama import ChatOllama
 from langchain.agents import create_agent
 from langchain.agents.middleware import wrap_model_call, ModelRequest, ModelResponse
 from typing import Any, AsyncIterator, Optional
-import subprocess
 import time
-from urllib.error import URLError
-from urllib.request import urlopen
 from langchain.tools import tool
 from .mcp_tools import get_tools as get_mcp_tools
 from .tools import get_tools as get_local_tools
+
+load_dotenv()
 
 AGENT_TIMEOUT = 60
 
@@ -23,22 +26,16 @@ class ModelManager:
 
         while time.monotonic() < deadline:
             try:
-                with urlopen("http://localhost:11434", timeout=1) as response:
-                    if response.status == 200:
-                        return
-            except URLError:
-                pass
-            except TimeoutError:
+                self._ollama_client.list()
+                return
+            except (ConnectionError, TimeoutError):
                 time.sleep(0.5)
 
-        raise TimeoutError("Ollama did not become ready on localhost:11434")
+        raise TimeoutError(f"Ollama did not become ready at {self.ollama_host or 'default host'}")
 
     def __init__(self):
-        subprocess.Popen(
-            ['ollama', 'serve'],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
+        self.ollama_host = os.getenv("OLLAMA_HOST")
+        self._ollama_client = OllamaClient(host=self.ollama_host)
         self._wait_for_ollama()
 
         self.__load_models_and_set_default()
@@ -49,23 +46,16 @@ class ModelManager:
     def _load_models(self) -> dict[str, ChatOllama]:
         models = {}
 
-        data = subprocess.run(
-            ['ollama', 'list'],
-            stdout=subprocess.PIPE
-        ).stdout.decode('utf-8')
-
-        lines = data.strip().split("\n")
-
-        for line in lines[1:]:  # skip header
-            parts = line.split()
-            if parts:
-                name = parts[0]
+        for model in self._ollama_client.list().models:
+            name = model.model
+            if name:
                 models[name] = ChatOllama(
-                    model = name ,  
-                    client_kwargs = {
+                    model=name,
+                    base_url=self.ollama_host,
+                    client_kwargs={
                         "timeout": httpx.Timeout(AGENT_TIMEOUT)
                     },
-                    reasoning = False
+                    reasoning=False,
                 )
 
         return models
@@ -94,6 +84,67 @@ class ModelManager:
         if model_name in self.models:
             self.selected_model_name = model_name
 
+    def describe_model(self, model_name: str) -> str:
+        model = self._ollama_client.show(model_name)
+        lines: list[str] = [f"Model: {model_name}"]
+
+        if model.modified_at:
+            lines.append(f"Modified at: {model.modified_at.isoformat()}")
+
+        if model.details:
+            details = model.details
+            detail_parts: list[str] = []
+            if details.family:
+                detail_parts.append(f"family: {details.family}")
+            if details.parameter_size:
+                detail_parts.append(f"parameters: {details.parameter_size}")
+            if details.quantization_level:
+                detail_parts.append(f"quantization: {details.quantization_level}")
+            if detail_parts:
+                lines.append("Details: " + ", ".join(detail_parts))
+
+        if model.capabilities:
+            lines.append("Capabilities: " + ", ".join(model.capabilities))
+
+        if model.parameters:
+            lines.append("Parameters:\n" + model.parameters.strip())
+
+        if model.template:
+            lines.append("Template:\n" + model.template.strip())
+
+        if model.modelfile:
+            lines.append("Modelfile:\n" + model.modelfile.strip())
+
+        if model.license:
+            lines.append("License:\n" + model.license.strip())
+
+        if model.modelinfo:
+            lines.append("Model info:\n" + json.dumps(model.modelinfo, ensure_ascii=False, indent=2, default=str))
+
+        return "\n\n".join(lines)
+
+    def describe_models(self) -> str:
+        lines: list[str] = []
+
+        for model in self._ollama_client.list().models:
+            name = model.model
+            if not name:
+                continue
+
+            description_parts: list[str] = []
+            if model.details:
+                if model.details.family:
+                    description_parts.append(model.details.family)
+                if model.details.parameter_size:
+                    description_parts.append(model.details.parameter_size)
+                if model.details.quantization_level:
+                    description_parts.append(model.details.quantization_level)
+
+            description = ", ".join(description_parts) if description_parts else "No description available."
+            lines.append(f"{name}: {description}")
+
+        return "\n".join(lines)
+
 
 # Create a single manager instance
 model_manager = ModelManager()
@@ -116,21 +167,12 @@ def get_model_information(model_name: str) -> str:
     """
 
     if model_name is None or model_name == "":
-        data = str()
-        for model_name in model_manager.get_model_names():
-            data += subprocess.run(
-                ['ollama', 'show', model_name],
-                stdout=subprocess.PIPE
-            ).stdout.decode('utf-8')
-        return data
+        return model_manager.describe_models()
     
     if model_name.lower() == "current":
         model_name = model_manager.selected_model_name  
 
-    return subprocess.run(
-        ['ollama', 'show', model_name],
-        stdout=subprocess.PIPE
-    ).stdout.decode('utf-8')
+    return model_manager.describe_model(model_name)
 
 agent = None
 
