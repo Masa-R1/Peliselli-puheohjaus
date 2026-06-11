@@ -26,3 +26,4 @@ Ja jos Home Assistant käytössä, lisää muuttujat:
 - `VITE_HA_WS_API_URL`, johon tulee HA:n WebSocket endpoint osoite (`ws://`*`ha-osoite`*`/api/websocket`)
 - `VITE_HA_URL`, HA:n http-osoite
 - `VITE_ENTITY_ID`, HA:n kuuntelu switchin id
+- `VITE_LANGUAGE_ENTITY_ID`, HA:n entiteetti jonka state vaihtaa frontendin kielen (`en` tai `fi`)

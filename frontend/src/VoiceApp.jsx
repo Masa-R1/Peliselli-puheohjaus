@@ -9,7 +9,7 @@ import VoiceStatusDetails from "./components/VoiceStatusDetails"
 import ModelSelect from "./components/ModelSelect"
 import UISelector from "./components/UISelector"
 import { webSpeechTextToSpeech } from "./utils/textToSpeech"
-import { apiUrl, streamChat, HA_ACCESS_TOKEN, HA_WS_API_URL, HA_URL, ENTITY_ID } from "./utils/api"
+import { streamChat, HA_ACCESS_TOKEN, HA_WS_API_URL, HA_URL, ENTITY_ID, LANGUAGE_ENTITY_ID } from "./utils/api"
 import { normalizeFrontendLanguage } from "./utils/frontendLanguage"
 
 import useSound from 'use-sound'
@@ -108,11 +108,16 @@ export default function VoiceApp() {
     const thinkIndexRef = useRef(0)
     const speechSessionRef = useRef(null)
     const wsRef = useRef(null)
+    const currentLanguageRef = useRef(i18n.resolvedLanguage || i18n.language)
     //#endregion
 
     useEffect(() => {
         messagesRef.current = messages
     }, [messages])
+
+    useEffect(() => {
+        currentLanguageRef.current = i18n.resolvedLanguage || i18n.language
+    }, [i18n.language, i18n.resolvedLanguage])
 
     useEffect(() => {
         const active = !modelLoading && haListening && wakeListeningEnabled
@@ -331,6 +336,15 @@ export default function VoiceApp() {
         let ws
         let isMounted = true
 
+        function applyFrontendLanguage(language) {
+            const nextLanguage = normalizeFrontendLanguage(language)
+
+            if (nextLanguage && nextLanguage !== currentLanguageRef.current) {
+                currentLanguageRef.current = nextLanguage
+                void i18n.changeLanguage(nextLanguage)
+            }
+        }
+
         function wsConnect() {
             ws = new WebSocket(HA_WS_API_URL)
 
@@ -339,12 +353,12 @@ export default function VoiceApp() {
             const llatoken = HA_ACCESS_TOKEN
 
             ws.onmessage = (event) => {
-                const msg = JSON.parse(event.data);
+                const msg = JSON.parse(event.data)
 
                 if (msg.type === "auth_required") {
                     ws.send(JSON.stringify({
                         type: "auth",
-                        access_token: llatoken
+                        access_token: llatoken,
                     }))
                 }
 
@@ -354,24 +368,43 @@ export default function VoiceApp() {
                         type: "subscribe_trigger",
                         trigger: {
                             platform: "state",
-                            entity_id: ENTITY_ID
-                        }
+                            entity_id: ENTITY_ID,
+                        },
                     }))
+
                     ws.send(JSON.stringify({
                         id: 2,
-                        type: "get_states"
+                        type: "get_states",
                     }))
+
+                    if (LANGUAGE_ENTITY_ID) {
+                        ws.send(JSON.stringify({
+                            id: 3,
+                            type: "subscribe_trigger",
+                            trigger: {
+                                platform: "state",
+                                entity_id: LANGUAGE_ENTITY_ID,
+                            },
+                        }))
+                    }
                 }
-                
-                // Haetaan alkutila
-                if (msg.id === 2) {                
+
+                if (msg.id === 2) {
                     const entity = msg.result.find(
-                        e => e.entity_id === ENTITY_ID
+                        (e) => e.entity_id === ENTITY_ID
                     )
 
-                    const intialState = entity?.state
+                    const initialState = entity?.state
 
-                    setHaListening(checkEntityState(intialState))
+                    setHaListening(checkEntityState(initialState))
+
+                    if (LANGUAGE_ENTITY_ID) {
+                        const languageEntity = msg.result.find(
+                            (e) => e.entity_id === LANGUAGE_ENTITY_ID
+                        )
+
+                        applyFrontendLanguage(languageEntity?.state)
+                    }
                 }
 
                 if (msg.type === "event" && msg.id === 1) {
@@ -380,8 +413,15 @@ export default function VoiceApp() {
 
                     setHaListening(checkEntityState(newState))
                 }
+
+                if (msg.type === "event" && msg.id === 3) {
+                    const trigger = msg.event.variables.trigger
+                    const newState = trigger.to_state?.state
+
+                    applyFrontendLanguage(newState)
+                }
             }
-            
+
             ws.onclose = () => {
                 if (!isMounted) return
                 console.log("Connection lost, retrying...")
@@ -393,7 +433,7 @@ export default function VoiceApp() {
                 setHaListening(false)
             }
         }
-        
+
         wsConnect()
 
         return () => {
@@ -498,11 +538,6 @@ export default function VoiceApp() {
 
             speechSessionRef.current?.complete()
 
-            const uiLanguage = normalizeFrontendLanguage(data?.uiLanguage)
-            if (uiLanguage && uiLanguage !== i18n.resolvedLanguage) {
-                void i18n.changeLanguage(uiLanguage)
-            }
-
             const finalReply = data?.content || streamedReply
             const assistantMessage = { role: "assistant", content: finalReply }
             addMessages(assistantMessage)
@@ -551,7 +586,6 @@ export default function VoiceApp() {
             textTransform: "uppercase",
         }
     }, [modelLoading, loading, haListening, wakeListeningEnabled]);
-
     return (
         <div
             style={{
