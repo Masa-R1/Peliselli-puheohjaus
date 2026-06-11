@@ -15,8 +15,10 @@ Ohjelma toimii 25 ja 24 alkuisilla node versiolla
 
 Frontend käyttää `VITE_BACKEND_URL`-ympäristömuuttujaa, jos se on asetettu. Ilman sitä kehityspalvelin proxyttää pyynnöt osoitteeseen `http://localhost:8000` (8000 on FastAPIn oletusportti)
 
-Laita `.env` tiedostoon muuttuja (jos backend ei ole localhostissa):
 Katso `.env.example` jos haluat katsoa mallia miltä `.env` tiedoston pitäisi näyttää
+
+Laita `.env` tiedostoon muuttuja (jos backend ei ole localhostissa):
+
 - `VITE_BACKEND_URL`, johon tulee backendin pelkkä http-osoite 
 
 Ja jos Home Assistant käytössä, lisää muuttujat:
