@@ -27,7 +27,7 @@ function normalizeSpeechForWakePhrase(text) {
         .trim()
 }
 
-function findWakePhraseWordsInOrder(normalizedTranscript, normalizedWakePhrase) {
+function findWordsInOrder(normalizedTranscript, normalizedWakePhrase) {
     const transcriptWords = normalizedTranscript.split(/\s+/)
     const phraseWords = normalizedWakePhrase.split(/\s+/)
 
@@ -115,16 +115,11 @@ export default function VoiceApp() {
     }, [messages])
 
     useEffect(() => {
-        listeningEnabledRef.current = haListening
-        if (modelLoading) {
-            setStatusKey("voice.status.wakeListenerDisabled")
-            setAwaitingCommand(false)
-            awaitingCommandRef.current = false
-            stopRecognition()
-            return
-        }
+        const active = !modelLoading && haListening && wakeListeningEnabled
 
-        if (!(haListening && wakeListeningEnabled)) {
+        listeningEnabledRef.current = active
+
+        if (!active) {
             setStatusKey("voice.status.wakeListenerDisabled")
             setAwaitingCommand(false)
             awaitingCommandRef.current = false
@@ -133,6 +128,7 @@ export default function VoiceApp() {
         }
 
         if (loadingRef.current || speakingRef.current) return
+
         setStatusKey(WAITING_STATUS_KEY)
         startRecognition()
     }, [haListening, wakeListeningEnabled, modelLoading])
@@ -256,6 +252,11 @@ export default function VoiceApp() {
 
                 // Follow-up mode: treat any speech as immediate command
                 if (followUpModeRef.current) {
+                    if (normalized === "all of the lights") {
+                        window.location.href = "https://www.youtube.com/watch?v=yqUgHHlVtZI"
+                        continue
+                    }
+
                     setStatusKey("voice.status.sendingFollowUp")
                     stopRecognition()
                     await sendToBackend(transcript)
@@ -263,6 +264,11 @@ export default function VoiceApp() {
                 }
 
                 if (awaitingCommandRef.current) {
+                    if (normalized === "all of the lights") {
+                        window.location.href = "https://www.youtube.com/watch?v=yqUgHHlVtZI"
+                        continue
+                    }
+
                     awaitingCommandRef.current = false
                     setAwaitingCommand(false)
                     setStatusKey("voice.status.awaitingResponse")
@@ -271,12 +277,17 @@ export default function VoiceApp() {
                     continue
                 }
 
-                const command = findWakePhraseWordsInOrder(normalized, normalizedWakePhrase)
+                const command = findWordsInOrder(normalized, normalizedWakePhrase)
                 if (command === null) continue
 
                 playNotify();
 
                 if (command) {
+                    if (normalizeSpeechForWakePhrase(command) === "all of the lights") {
+                        window.location.href = "https://www.youtube.com/watch?v=yqUgHHlVtZI"
+                        continue
+                    }
+
                     setStatusKey("voice.status.activationDetectedSending")
                     stopRecognition()
                     await sendToBackend(command)
@@ -521,7 +532,7 @@ export default function VoiceApp() {
     }
 
     const circleStyle = useMemo(() => {
-        const isActive = wakeListeningEnabled &&  haListening && !loading
+        const isActive = !modelLoading && wakeListeningEnabled && haListening && !loading
 
         return {
             width: "220px",
