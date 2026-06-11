@@ -133,6 +133,14 @@ export default function VoiceApp() {
         startRecognition()
     }, [haListening, wakeListeningEnabled, modelLoading])
 
+    const checkAOTL = (text) => {
+        if (typeof(text) === 'string' && text === 'all of the lights') {
+            window.open("https://www.youtube.com/watch?v=yqUgHHlVtZI", "_blank")
+            return true
+        }
+        return false
+    }
+
     useEffect(() => {
         loadingRef.current = loading || modelLoading
     }, [loading, modelLoading])
@@ -252,10 +260,7 @@ export default function VoiceApp() {
 
                 // Follow-up mode: treat any speech as immediate command
                 if (followUpModeRef.current) {
-                    if (normalized === "all of the lights") {
-                        window.location.href = "https://www.youtube.com/watch?v=yqUgHHlVtZI"
-                        continue
-                    }
+                    if (checkAOTL(normalized)) continue
 
                     setStatusKey("voice.status.sendingFollowUp")
                     stopRecognition()
@@ -264,10 +269,7 @@ export default function VoiceApp() {
                 }
 
                 if (awaitingCommandRef.current) {
-                    if (normalized === "all of the lights") {
-                        window.location.href = "https://www.youtube.com/watch?v=yqUgHHlVtZI"
-                        continue
-                    }
+                    if (checkAOTL(normalized)) continue
 
                     awaitingCommandRef.current = false
                     setAwaitingCommand(false)
@@ -283,10 +285,7 @@ export default function VoiceApp() {
                 playNotify();
 
                 if (command) {
-                    if (normalizeSpeechForWakePhrase(command) === "all of the lights") {
-                        window.location.href = "https://www.youtube.com/watch?v=yqUgHHlVtZI"
-                        continue
-                    }
+                    if (checkAOTL(normalizeSpeechForWakePhrase(command))) continue
 
                     setStatusKey("voice.status.activationDetectedSending")
                     stopRecognition()
@@ -556,7 +555,7 @@ export default function VoiceApp() {
             letterSpacing: "0.06em",
             textTransform: "uppercase",
         }
-    }, [loading, haListening, wakeListeningEnabled]);
+    }, [modelLoading, loading, haListening, wakeListeningEnabled]);
 
     return (
         <div
