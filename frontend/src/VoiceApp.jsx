@@ -134,11 +134,11 @@ export default function VoiceApp() {
     }, [haListening, wakeListeningEnabled, modelLoading])
 
     const checkAOTL = (text) => {
-        if (typeof(text) === 'string' && text === 'all of the lights') {
-            window.open("https://www.youtube.com/watch?v=yqUgHHlVtZI", "_blank")
-            return true
+        if (typeof(text) === 'string' && text === 'all of the lights' && Math.floor(Math.random() * 100) < 1) {
+            //window.open("https://www.youtube.com/watch?v=yqUgHHlVtZI", "_blank")
+            return "Kanye West - All of the Lights"
         }
-        return false
+        return null
     }
 
     useEffect(() => {
@@ -260,22 +260,19 @@ export default function VoiceApp() {
 
                 // Follow-up mode: treat any speech as immediate command
                 if (followUpModeRef.current) {
-                    if (checkAOTL(normalized)) continue
-
                     setStatusKey("voice.status.sendingFollowUp")
                     stopRecognition()
-                    await sendToBackend(transcript)
+                    await sendToBackend(checkAOTL(normalized) ?? transcript)
+
                     continue
                 }
 
                 if (awaitingCommandRef.current) {
-                    if (checkAOTL(normalized)) continue
-
                     awaitingCommandRef.current = false
                     setAwaitingCommand(false)
                     setStatusKey("voice.status.awaitingResponse")
                     stopRecognition()
-                    await sendToBackend(transcript)
+                    await sendToBackend(checkAOTL(normalized) ?? transcript)
                     continue
                 }
 
@@ -285,11 +282,9 @@ export default function VoiceApp() {
                 playNotify();
 
                 if (command) {
-                    if (checkAOTL(normalizeSpeechForWakePhrase(command))) continue
-
                     setStatusKey("voice.status.activationDetectedSending")
                     stopRecognition()
-                    await sendToBackend(command)
+                    await sendToBackend(checkAOTL(command) ?? command)
                     continue
                 }
 
