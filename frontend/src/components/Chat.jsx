@@ -10,7 +10,6 @@ function Chat() {
     const { loading, setLoading } = useStateStore()
 
     const { conversationMessages } = useConversationStore()
-    const hasStreamingBotMessage = conversationMessages.some((msg) => msg.sender === "bot" && msg.streaming)
 
     const chatboxRef = useRef(null);
     const { t } = useTranslation()
@@ -40,28 +39,18 @@ function Chat() {
                         />
                     )}
 
-                    <span className="text-bubble">
-                        <ReactMarkdown>{msg.text}</ReactMarkdown>
+                    <span className={`text-bubble${loading ? " typing-text" : ""}`}>
+                        {(!msg.text || msg.text.length === 0) && loading ? 
+                        <>
+                            {t("chat.thinking")}
+                            <span className="dot">.</span>
+                            <span className="dot">.</span>
+                            <span className="dot">.</span>
+                        </> : <ReactMarkdown>{msg.text && msg.text.length > 0 ? msg.text : t("chat.error")}</ReactMarkdown>
+                        }
                     </span>
                 </div>
             ))}
-
-            {loading && !hasStreamingBotMessage && (
-                <div className="message bot typing">
-                    <img
-                        src={logo}
-                        className="bot-chat-logo"
-                        alt={t("chat.logoAlt")}
-                    />
-
-                    <span className="text-bubble typing-text">
-                        {t("chat.thinking")}
-                        <span className="dot">.</span>
-                        <span className="dot">.</span>
-                        <span className="dot">.</span>
-                    </span>
-                </div>
-            )}
         </div>
     )
 }

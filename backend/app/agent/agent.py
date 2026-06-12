@@ -1,3 +1,4 @@
+import subprocess
 import json
 import os
 import httpx
@@ -36,6 +37,14 @@ class ModelManager:
     def __init__(self):
         self.ollama_host = os.getenv("OLLAMA_HOST")
         self._ollama_client = OllamaClient(host=self.ollama_host)
+
+        if self.ollama_host is None:
+            subprocess.Popen(
+                ['ollama', 'serve'],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+
         self._wait_for_ollama()
 
         self.__load_models_and_set_default()

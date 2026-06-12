@@ -20,7 +20,8 @@
     "messagePlaceholder": "Viesti SAMK-botille...",
     "noModelsLoaded": "Malleja ei ladattu",
     "loadingModels": "Ladataan malleja...",
-    "logoAlt": "SAMK-botin logo"
+    "logoAlt": "SAMK-botin logo",
+    "error": "Tapahtui virhe viestin käsittelyssä."
   },
   "voice": {
     "title": "Puheavustaja",

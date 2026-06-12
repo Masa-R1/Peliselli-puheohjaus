@@ -20,7 +20,8 @@
     "messagePlaceholder": "Message SAMK Bot...",
     "noModelsLoaded": "No models loaded",
     "loadingModels": "Loading models...",
-    "logoAlt": "SAMK Bot logo"
+    "logoAlt": "SAMK Bot logo",
+    "error": "An error occurred while processing your message."
   },
   "voice": {
     "title": "Voice Assistant",
