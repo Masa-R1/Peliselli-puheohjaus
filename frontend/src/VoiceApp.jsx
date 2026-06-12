@@ -17,6 +17,7 @@ import notifySound from "./assets/sound/278142__ricemaster__effect_notify.wav"
 import LanguageSelect from "./components/LanguageSelector"
 
 const WAITING_STATUS_KEY = "voice.status.waiting"
+const WAITING_2_STATUS_KEY = 'voice.status.waitingForWakePhrase'
 const FOLLOWUP_TIMEOUT_MS = 20000
 
 function normalizeSpeechForWakePhrase(text) {
@@ -78,7 +79,7 @@ export default function VoiceApp() {
 
     const [wakeListeningEnabled, setWakeListeningEnabled] = useState(true)
     const [awaitingCommand, setAwaitingCommand] = useState(false)
-    const [statusKey, setStatusKey] = useState(WAITING_STATUS_KEY)
+    const [statusKey, setStatusKey] = useState(WAITING_2_STATUS_KEY)
     const [lastHeard, setLastHeard] = useState("")
     const [lastReply, setLastReply] = useState("")
     const [errorText, setErrorText] = useState("")
@@ -275,7 +276,7 @@ export default function VoiceApp() {
                 if (awaitingCommandRef.current) {
                     awaitingCommandRef.current = false
                     setAwaitingCommand(false)
-                    setStatusKey("voice.status.awaitingResponse")
+                    setStatusKey("voice.status.waitingForResponse")
                     stopRecognition()
                     await sendToBackend(checkAOTL(normalized) ?? transcript)
                     continue
@@ -499,7 +500,7 @@ export default function VoiceApp() {
                             clearFollowUpTimeout()
                             followUpTimeoutRef.current = setTimeout(() => {
                                 followUpModeRef.current = false
-                                setStatusKey(WAITING_STATUS_KEY)
+                                setStatusKey(WAITING_2_STATUS_KEY)
                                 if (listeningEnabledRef.current && !loadingRef.current && !speakingRef.current) {
                                     startRecognition()
                                 }

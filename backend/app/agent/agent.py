@@ -15,8 +15,6 @@ from .tools import get_tools as get_local_tools
 
 load_dotenv()
 
-AGENT_TIMEOUT = 60
-
 class ModelManager:
     def __load_models_and_set_default(self): 
         self.models = self._load_models()
@@ -61,9 +59,6 @@ class ModelManager:
                 models[name] = ChatOllama(
                     model=name,
                     base_url=self.ollama_host,
-                    client_kwargs={
-                        "timeout": httpx.Timeout(AGENT_TIMEOUT)
-                    },
                     reasoning=False,
                 )
 
