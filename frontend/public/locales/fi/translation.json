@@ -1,7 +1,7 @@
 {
   "wakePhrase": "hei avustaja",
   "common": {
-    "assistant": "Avustaja",
+    "assistant": "",
     "logoAlt": "SAMK-botin logo",
     "speechRecognitionUnsupported": "Puheentunnistus ei ole tuettu tässä selaimessa."
   },
