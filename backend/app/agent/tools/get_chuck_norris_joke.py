@@ -24,10 +24,10 @@ def get_chuck_norris_joke(category: str = str(), query: str = str()) -> str:
         params = dict()
 
         if category and category != "":
-            params.append(("category", category))
+            params["category"] = category
         elif query and query != "":
             url = "https://api.chucknorris.io/jokes/search"
-            params.append(("query", query))
+            params["query"] = query
 
         response = httpx.get(url, timeout=httpx.Timeout(TIMEOUT), params=params)
         response.raise_for_status()
