@@ -9,7 +9,7 @@ import VoiceStatusDetails from "./components/VoiceStatusDetails"
 import ModelSelect from "./components/ModelSelect"
 import UISelector from "./components/UISelector"
 import { webSpeechTextToSpeech } from "./utils/textToSpeech"
-import { streamChat, HA_ACCESS_TOKEN, HA_WS_API_URL, HA_URL, ENTITY_ID, LANGUAGE_ENTITY_ID } from "./utils/api"
+import { streamChat, HA_ACCESS_TOKEN, HA_WS_API_URL, HA_URL, LISTENING_ENTITY_ID, LANGUAGE_ENTITY_ID } from "./utils/api"
 import { normalizeFrontendLanguage } from "./utils/frontendLanguage"
 
 import useSound from 'use-sound'
@@ -369,7 +369,7 @@ export default function VoiceApp() {
                         type: "subscribe_trigger",
                         trigger: {
                             platform: "state",
-                            entity_id: ENTITY_ID,
+                            entity_id: LISTENING_ENTITY_ID,
                         },
                     }))
 
@@ -392,7 +392,7 @@ export default function VoiceApp() {
 
                 if (msg.id === 2) {
                     const entity = msg.result.find(
-                        (e) => e.entity_id === ENTITY_ID
+                        (e) => e.entity_id === LISTENING_ENTITY_ID
                     )
 
                     const initialState = entity?.state
