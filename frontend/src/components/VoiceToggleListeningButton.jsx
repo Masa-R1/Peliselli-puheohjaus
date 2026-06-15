@@ -1,4 +1,8 @@
+import { useTranslation } from "react-i18next"
+
 function VoiceToggleListeningButton({ enabled, onClick }) {
+    const { t } = useTranslation()
+
     return (
         <button
             onClick={onClick}
@@ -12,7 +16,7 @@ function VoiceToggleListeningButton({ enabled, onClick }) {
                 background: enabled ? "#2a2a2a" : "#3a1414",
             }}
         >
-            {enabled ? "Disable listening" : "Enable listening"}
+            {enabled ? t("voice.buttons.disableListening") : t("voice.buttons.enableListening")}
         </button>
     )
 }

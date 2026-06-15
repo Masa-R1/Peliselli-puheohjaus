@@ -3,43 +3,16 @@ import { useStateStore } from "../stores/useStateStore"
 import { useConversationStore } from "../stores/useConversationStore"
 import ReactMarkdown from "react-markdown";
 import logo from "../assets/samk-bubble.png";
-import "../ellipsis-anim.css"
+import "../styles/ellipsis-anim.css"
+import { useTranslation } from "react-i18next"
 
 function Chat() {
-    const { loading } = useStateStore()
-    const { setLoading } = useStateStore()
+    const { loading, setLoading } = useStateStore()
 
     const { conversationMessages } = useConversationStore()
 
     const chatboxRef = useRef(null);
-
-    // Mitä!?
-    // const checkMessage = (aiAnswer) => {
-    //     const settingKeywords = ["changing", "switching", "making"]
-
-    //     const colorKeywords = ["red", "green", "blue", "yellow", "purple"]
-
-    //     aiAnswer = aiAnswer.toLowerCase().split(" ")
-
-    //     const overlap = settingKeywords.some(item => aiAnswer.includes(item))
-
-    //     if (overlap) {
-    //         const findColor = colorKeywords.find(value => aiAnswer.includes(value))
-
-    //         if (colorMatch !== undefined) {
-    //             switch (colorMatch) {
-    //                 case "red":
-    //                     console.log(colorMatch)
-    //                     break;
-    //                 case "green":
-    //                     console.log(colorMatch)
-    //                     break;
-    //                 default:
-    //                     break;
-    //             }
-    //         }
-    //     }
-    // }
+    const { t } = useTranslation()
 
     // Auto-scroll
     useEffect(() => {
@@ -62,32 +35,22 @@ function Chat() {
                         <img
                             src={logo}
                             className="bot-chat-logo"
-                            alt="logo"
+                            alt={t("chat.logoAlt")}
                         />
                     )}
 
-                    <span className="text-bubble">
-                        <ReactMarkdown>{msg.text}</ReactMarkdown>
+                    <span className={`text-bubble${loading ? " typing-text" : ""}`}>
+                        {(!msg.text || msg.text.length === 0) && loading ? 
+                        <>
+                            {t("chat.thinking")}
+                            <span className="dot">.</span>
+                            <span className="dot">.</span>
+                            <span className="dot">.</span>
+                        </> : <ReactMarkdown>{msg.text && msg.text.length > 0 ? msg.text : t("chat.error")}</ReactMarkdown>
+                        }
                     </span>
                 </div>
             ))}
-
-            {loading && (
-                <div className="message bot typing">
-                    <img
-                        src={logo}
-                        className="bot-chat-logo"
-                        alt="logo"
-                    />
-
-                    <span className="text-bubble typing-text">
-                        Thinking
-                        <span className="dot">.</span>
-                        <span className="dot">.</span>
-                        <span className="dot">.</span>
-                    </span>
-                </div>
-            )}
         </div>
     )
 }

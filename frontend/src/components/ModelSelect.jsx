@@ -1,33 +1,57 @@
 import { useEffect, useRef } from "react";
 import { useModelStore } from "../stores/useModelStore";
 import { apiUrl } from "../utils/api";
+import { useTranslation } from "react-i18next"
 
 function ModelSelect() {
     const { 
         models, 
         setModels, 
-        setSelectedModel, 
-        selectedModel 
+        selectedModel,
+        setSelectedModel,
+        modelLoading,
+        setModelLoading,
     } = useModelStore()
+    const { t } = useTranslation()
+
+    const intialFetchRef = useRef(true)
 
     useEffect(() => {
-        fetch(apiUrl("/chat"))
-		.then((respose) => respose.json())
-		.then(data => {
-			setModels(data)
-			setSelectedModel(data[0])
-		})
-		.catch((error) => {
-			console.log(error)
-        })
-	}, [])
+        let isActive = true
+        setModelLoading(true)
+		const interval = setInterval(() => {
+			fetch(apiUrl("/chat"))
+			.then((respose) => respose.json())
+			.then(data => {
+				if (!isActive) return
+				if (intialFetchRef.current) {
+                    setModels(data)
+                    setSelectedModel(data[0] ?? "")
+                    intialFetchRef.current = false
+                }
+                setModelLoading(false)
+                clearInterval(interval)
+			})
+			.catch((error) => {
+				console.log(error)
+			})
+		}, 2000)
+
+        return () => {
+            isActive = false
+            setModelLoading(false)
+            clearInterval(interval)
+        }
+    }, [setModelLoading, setModels, setSelectedModel])
 
     return (
-        <div style={{paddingLeft:15}}>
+        <div>
             <label htmlFor="select-model"></label>
             <select 
                 name="select-model"
                 id="select-model"
+                value={selectedModel}
+                disabled={modelLoading}
                 onChange={(e) => {
                     setSelectedModel(e.target.value)
                 }}
@@ -38,8 +62,10 @@ function ModelSelect() {
                     textShadow: '0 0 4px #818bff' 
                 }}
             >
-                {models.length === 0 ? (
-                    <option value="">No models loaded</option>
+                {modelLoading ? (
+                    <option value="">{t("chat.loadingModels")}</option>
+                ) : models.length === 0 ? (
+                    <option value="">{t("chat.noModelsLoaded")}</option>
                 ) : (
                     models.map((model, index) => (
                        <option key={index} value={model}>{model}</option>

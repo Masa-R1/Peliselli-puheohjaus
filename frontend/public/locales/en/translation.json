@@ -1,4 +1,61 @@
 {
   "wakePhrase": "hey assistant",
-  "systemMessage": "You are an assistant, who uses tools when possible. Prompts come from speech recognition, so they may be incomplete or contain errors. If the prompt is incomplete, ask for clarification instead of making assumptions. Keep answers short and concise."
+  "common": {
+    "assistant": "",
+    "logoAlt": "SAMK Bot logo",
+    "speechRecognitionUnsupported": "Speech recognition is not supported in this browser."
+  },
+  "navigation": {
+    "chat": "Chat",
+    "voice": "Voice"
+  },
+  "actions": {
+    "startVoiceInput": "Start voice input",
+    "toggleVoiceOutput": "Toggle text-to-speech",
+    "sendMessage": "Send message"
+  },
+  "chat": {
+    "title": "SAMK Bot",
+    "thinking": "Thinking",
+    "messagePlaceholder": "Message SAMK Bot...",
+    "noModelsLoaded": "No models loaded",
+    "loadingModels": "Loading models...",
+    "logoAlt": "SAMK Bot logo",
+    "error": "An error occurred while processing your message."
+  },
+  "voice": {
+    "title": "Voice Assistant",
+    "thinkPhrases": [
+      "Thinking...",
+      "Calculating...",
+      "Pondering...",
+      "Analyzing...",
+      "Reflecting...",
+      "Generating slop..."
+    ],
+    "status": {
+      "waiting": "Awaiting command...",
+      "wakeListenerDisabled": "Wake listener disabled",
+      "sendingFollowUp": "Sending follow-up command...",
+      "activationDetectedSending": "Activation detected, sending command",
+      "activationDetectedSpeak": "Activation detected, say your command",
+      "waitingForResponse": "Waiting for response...",
+      "waitingForWakePhrase": "Waiting for wake phrase..."
+    },
+    "labels": {
+      "wakePhrase": "Wake phrase",
+      "wakePhraseHeard": "Wake phrase heard. Speak your command now.",
+      "heard": "Heard",
+      "reply": "Reply"
+    },
+    "errors": {
+      "recognitionError": "Recognition error: {{error}}",
+      "backendFailed": "Failed to contact backend."
+    },
+    "buttons": {
+      "disableListening": "Disable listening",
+      "enableListening": "Enable listening"
+    }
+  },
+  "systemMessage": "You are a friendly, helpful home assistant AI. You are located in Peliselli, an area in SAMK (Satakunta University of Applied Sciences) in Pori, Finland.\n\nYou can control Home Assistant devices and use available tools.\n\nGuidelines:\n- Be concise, clear, and friendly.\n- Respond in only English, except when asked to translate.\n- Prefer taking action when the user gives a command.\n- Confirm important actions briefly.\n- Use tools for real-time data.\n- Do not invent device states.\n- Use exact entity names when calling tools and avoid guessing.\n-Never perform destructive or risky actions unless explicitly requested."
 }

@@ -10,6 +10,50 @@ function pickVoice(voices, language) {
     )
 }
 
+function splitCompletedSpeechParts(textBuffer) {
+    const completed = []
+    let lastBoundaryIndex = 0
+
+    for (let i = 0; i < textBuffer.length; i += 1) {
+        const char = textBuffer[i]
+        const isSentenceEnd = ".!?。！？".includes(char)
+        const isLineBreak = char === "\n"
+        const nextChar = textBuffer[i + 1]
+        const isBoundary = isLineBreak || (isSentenceEnd && (!nextChar || /\s/.test(nextChar)))
+
+        if (!isBoundary) continue
+
+        const piece = textBuffer.slice(lastBoundaryIndex, i + 1).trim()
+        if (piece) {
+            completed.push(piece)
+        }
+        lastBoundaryIndex = i + 1
+    }
+
+    return {
+        completed,
+        remainder: textBuffer.slice(lastBoundaryIndex),
+    }
+}
+
+function createUtterance(text, options) {
+    const utterance = new SpeechSynthesisUtterance(getSpeechText(text))
+    const language = options.language || navigator.language
+
+    utterance.lang = language
+    utterance.rate = options.rate ?? 1
+    utterance.pitch = options.pitch ?? 1
+    utterance.volume = options.volume ?? 1
+
+    const voices = window.speechSynthesis.getVoices()
+    const voice = pickVoice(voices, language)
+    if (voice) {
+        utterance.voice = voice
+    }
+
+    return utterance
+}
+
 export function createWebSpeechTextToSpeech() {
     return {
         isSupported() {
@@ -19,37 +63,129 @@ export function createWebSpeechTextToSpeech() {
             if (typeof window === "undefined") return
             window.speechSynthesis.cancel()
         },
+        createSentenceStream(options = {}) {
+            if (typeof window === "undefined") {
+                return {
+                    pushText() {},
+                    complete() {},
+                    cancel() {},
+                    finished: Promise.resolve(),
+                }
+            }
+
+            let cancelled = false
+            let closed = false
+            let speaking = false
+            let started = false
+            let finalized = false
+            let textBuffer = ""
+            const queue = []
+
+            let resolveFinished
+            const finished = new Promise((resolve) => {
+                resolveFinished = resolve
+            })
+
+            function finalizeOnce() {
+                if (finalized) return
+                finalized = true
+                resolveFinished()
+                if (!cancelled && typeof options.onEnd === "function") {
+                    options.onEnd()
+                }
+            }
+
+            function maybeFinalize() {
+                if (cancelled) {
+                    finalizeOnce()
+                    return
+                }
+
+                if (closed && !speaking && queue.length === 0) {
+                    finalizeOnce()
+                }
+            }
+
+            function speakNext() {
+                if (cancelled || speaking || queue.length === 0) {
+                    maybeFinalize()
+                    return
+                }
+
+                const nextText = queue.shift()
+                const utterance = createUtterance(nextText, options)
+
+                utterance.onstart = () => {
+                    if (!started && typeof options.onStart === "function") {
+                        started = true
+                        options.onStart()
+                    }
+                }
+
+                utterance.onend = () => {
+                    speaking = false
+                    speakNext()
+                }
+
+                utterance.onerror = (event) => {
+                    speaking = false
+                    if (typeof options.onError === "function") {
+                        options.onError(event)
+                    }
+                    speakNext()
+                }
+
+                speaking = true
+                window.speechSynthesis.speak(utterance)
+            }
+
+            function enqueue(text) {
+                const safeText = getSpeechText(text).trim()
+                if (!safeText) return
+                queue.push(safeText)
+            }
+
+            return {
+                pushText(text) {
+                    if (cancelled || closed) return
+                    textBuffer += getSpeechText(text || "")
+
+                    const { completed, remainder } = splitCompletedSpeechParts(textBuffer)
+                    textBuffer = remainder
+
+                    for (const part of completed) {
+                        enqueue(part)
+                    }
+
+                    speakNext()
+                },
+                complete() {
+                    if (cancelled || closed) return
+                    closed = true
+                    enqueue(textBuffer)
+                    textBuffer = ""
+                    speakNext()
+                    maybeFinalize()
+                },
+                cancel() {
+                    if (cancelled) return
+                    cancelled = true
+                    closed = true
+                    queue.length = 0
+                    textBuffer = ""
+                    window.speechSynthesis.cancel()
+                    maybeFinalize()
+                },
+                finished,
+            }
+        },
         speak(text, options = {}) {
             if (typeof window === "undefined") return null
 
-            const utterance = new SpeechSynthesisUtterance(getSpeechText(text))
-            const language = options.language || navigator.language
-
-            utterance.lang = language
-            utterance.rate = options.rate ?? 1
-            utterance.pitch = options.pitch ?? 1
-            utterance.volume = options.volume ?? 1
-
-            const voices = window.speechSynthesis.getVoices()
-            const voice = pickVoice(voices, language)
-            if (voice) {
-                utterance.voice = voice
-            }
-
-            if (typeof options.onStart === "function") {
-                utterance.onstart = options.onStart
-            }
-
-            if (typeof options.onEnd === "function") {
-                utterance.onend = options.onEnd
-            }
-
-            if (typeof options.onError === "function") {
-                utterance.onerror = options.onError
-            }
-
-            window.speechSynthesis.speak(utterance)
-            return utterance
+            const session = this.createSentenceStream(options)
+            session.pushText(text)
+            session.complete()
+            return session
         },
     }
 }

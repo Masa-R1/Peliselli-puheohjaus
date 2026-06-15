@@ -1,4 +1,62 @@
 {
   "wakePhrase": "hei avustaja",
-  "systemMessage": "Olet avustaja, joka käyttää työkaluja aina, kun mahdollista. Kehotteet tulevat puheentunnistuksesta, joten ne saattavat olla epätäydellisiä tai sisältää virheitä. Jos kehotteessa on puutteita, pyydä tarkennusta sen sijaan, että tekisit oletuksia.  Pidä vastaukset lyhyinä ja ytimekkäinä."
+  "common": {
+    "assistant": "",
+    "logoAlt": "SAMK-botin logo",
+    "speechRecognitionUnsupported": "Puheentunnistus ei ole tuettu tässä selaimessa."
+  },
+  "navigation": {
+    "chat": "Chat",
+    "voice": "Puhe"
+  },
+  "actions": {
+    "startVoiceInput": "Aloita puheentunnistus",
+    "toggleVoiceOutput": "Vaihda puhesynteesi",
+    "sendMessage": "Lähetä viesti"
+  },
+  "chat": {
+    "title": "SAMK-botti",
+    "thinking": "Mietin",
+    "messagePlaceholder": "Viesti SAMK-botille...",
+    "noModelsLoaded": "Malleja ei ladattu",
+    "loadingModels": "Ladataan malleja...",
+    "logoAlt": "SAMK-botin logo",
+    "error": "Tapahtui virhe viestin käsittelyssä."
+  },
+  "voice": {
+    "title": "Puheavustaja",
+    "thinkPhrases": [
+      "Mietin...",
+      "Lasken...",
+      "Pohdin...",
+      "Analysoin...",
+      "Reflektoin...",
+      "Tuotan suttua..."
+    ],
+    "status": {
+      "waiting": "Odotan kehotetta...",
+      "wakeListenerDisabled": "Herätesanan kuuntelu pois käytöstä",
+      "sendingFollowUp": "Lähetän jatkokomennon...",
+      "activationDetectedSending": "Aktivointi havaittu, lähetän komennon",
+      "activationDetectedSpeak": "Aktivointi havaittu, sano komento",
+      "waitingForResponse": "Odotan vastausta...",
+      "waitingForWakePhrase": "Odotan herätesanaa..."
+    },
+    "labels": {
+      "wakePhrase": "Herätesana",
+      "wakePhraseHeard": "Herätesana kuultu. Sano komento nyt.",
+      "heard": "Kuultu",
+      "reply": "Vastaus"
+    },
+    "errors": {
+      "recognitionError": "Puheentunnistusvirhe: {{error}}",
+      "backendFailed": "Taustapalvelimeen ei saatu yhteyttä."
+    },
+    "buttons": {
+      "disableListening": "Poista kuuntelu käytöstä",
+      "enableListening": "Ota kuuntelu käyttöön"
+    }
+  },
+  "systemMessage": "Olet avustaja, joka sijaitsee Pelisellissä Porin SAMK (Satakunnan Ammattikorkeakoulu)-kampuksella Suomessa. Kykenet hallitsemaan Home Assistant -järjestelmän laitteita ja käyttämään saatavilla olevia työkaluja. Kehotteet tulevat puheentunnistuksesta, joten ne saattavat olla epätäydellisiä tai sisältää virheitä. Jos kehotteessa on puutteita, pyydä tarkennusta sen sijaan, että tekisit oletuksia.  Pidä vastaukset lyhyinä ja ytimekkäinä. Puhu ainoastaan suomea, ellei sinua kehoteta kääntämään. Sana myrky tarkoittaa vihreää väriä."
 }
+  

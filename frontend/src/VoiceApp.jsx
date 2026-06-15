@@ -6,16 +6,18 @@ import { useConversationStore } from "./stores/useConversationStore"
 import { useModelStore } from "./stores/useModelStore"
 import VoiceAvatar from "./components/VoiceAvatar"
 import VoiceStatusDetails from "./components/VoiceStatusDetails"
-import VoiceToggleListeningButton from "./components/VoiceToggleListeningButton"
 import ModelSelect from "./components/ModelSelect"
+import UISelector from "./components/UISelector"
 import { webSpeechTextToSpeech } from "./utils/textToSpeech"
-import { apiUrl } from "./utils/api"
+import { streamChat, HA_ACCESS_TOKEN, HA_WS_API_URL, HA_URL, ENTITY_ID, LANGUAGE_ENTITY_ID } from "./utils/api"
+import { normalizeFrontendLanguage } from "./utils/frontendLanguage"
 
 import useSound from 'use-sound'
 import notifySound from "./assets/sound/278142__ricemaster__effect_notify.wav"
 import LanguageSelect from "./components/LanguageSelector"
-const WAITING = "Awaiting activation..."
-const THINK_PHRASES = ["Thinking...", "Calculating...", "Pondering...", "Analyzing...", "Reflecting...", "Generating slop..."]
+
+const WAITING_STATUS_KEY = "voice.status.waiting"
+const WAITING_2_STATUS_KEY = 'voice.status.waitingForWakePhrase'
 const FOLLOWUP_TIMEOUT_MS = 20000
 
 function normalizeSpeechForWakePhrase(text) {
@@ -26,7 +28,7 @@ function normalizeSpeechForWakePhrase(text) {
         .trim()
 }
 
-function findWakePhraseWordsInOrder(normalizedTranscript, normalizedWakePhrase) {
+function findWordsInOrder(normalizedTranscript, normalizedWakePhrase) {
     const transcriptWords = normalizedTranscript.split(/\s+/)
     const phraseWords = normalizedWakePhrase.split(/\s+/)
 
@@ -54,22 +56,42 @@ export default function VoiceApp() {
     const { t, i18n } = useTranslation()
     const [playNotify] = useSound(notifySound, { volume: 0.5 })
 
-    const { loading, voiceEnabled, setLoading, setListening, haListening, setHaListening } = useStateStore()
-    const { messages, addMessages } = useMessageStore()
-    const { addConversationMessages } = useConversationStore()
-    const { models, selectedModel } = useModelStore()
+    const { 
+        loading, 
+        voiceEnabled, 
+        setLoading, 
+        setListening, 
+        haListening, 
+        setHaListening 
+    } = useStateStore()
+    const { 
+        messages, 
+        addMessages, 
+        loadSystemMessage 
+    } = useMessageStore()
+    const { 
+        addConversationMessages, 
+        startStreamingBotMessage, 
+        appendToStreamingBotMessage, 
+        finalizeStreamingBotMessage 
+    } = useConversationStore()
+    const { selectedModel, modelLoading } = useModelStore()
 
     const [wakeListeningEnabled, setWakeListeningEnabled] = useState(true)
     const [awaitingCommand, setAwaitingCommand] = useState(false)
-    const [statusText, setStatusText] = useState(WAITING)
+    const [statusKey, setStatusKey] = useState(WAITING_2_STATUS_KEY)
     const [lastHeard, setLastHeard] = useState("")
     const [lastReply, setLastReply] = useState("")
     const [errorText, setErrorText] = useState("")
-    const [thinkText, setThinkText] = useState("Assistant")
+    const [thinkText, setThinkText] = useState(t("common.assistant"))
     const normalizedWakePhrase = useMemo(
         () => normalizeSpeechForWakePhrase(t("wakePhrase")),
         [t]
     )
+    const thinkPhrases = useMemo(() => {
+        const phrases = t("voice.thinkPhrases", { returnObjects: true })
+        return Array.isArray(phrases) && phrases.length > 0 ? phrases : [t("chat.thinking")]
+    }, [t])
 
     //#region Refs
     const recognitionRef = useRef(null)
@@ -85,6 +107,9 @@ export default function VoiceApp() {
     const followUpTimeoutRef = useRef(null)
     const thinkPhraseRef = useRef("")
     const thinkIndexRef = useRef(0)
+    const speechSessionRef = useRef(null)
+    const wsRef = useRef(null)
+    const currentLanguageRef = useRef(i18n.resolvedLanguage || i18n.language)
     //#endregion
 
     useEffect(() => {
@@ -92,9 +117,16 @@ export default function VoiceApp() {
     }, [messages])
 
     useEffect(() => {
-        listeningEnabledRef.current = haListening
-        if (!(haListening && wakeListeningEnabled)) {
-            setStatusText("Wake listener disabled")
+        currentLanguageRef.current = i18n.resolvedLanguage || i18n.language
+    }, [i18n.language, i18n.resolvedLanguage])
+
+    useEffect(() => {
+        const active = !modelLoading && haListening && wakeListeningEnabled
+
+        listeningEnabledRef.current = active
+
+        if (!active) {
+            setStatusKey("voice.status.wakeListenerDisabled")
             setAwaitingCommand(false)
             awaitingCommandRef.current = false
             stopRecognition()
@@ -102,13 +134,22 @@ export default function VoiceApp() {
         }
 
         if (loadingRef.current || speakingRef.current) return
-        setStatusText(WAITING)
+
+        setStatusKey(WAITING_STATUS_KEY)
         startRecognition()
-    }, [haListening, wakeListeningEnabled])
+    }, [haListening, wakeListeningEnabled, modelLoading])
+
+    const checkAOTL = (text) => {
+        if (typeof(text) === 'string' && text === 'all of the lights' && Math.floor(Math.random() * 100) < 1) {
+            //window.open("https://www.youtube.com/watch?v=yqUgHHlVtZI", "_blank")
+            return "Kanye West - All of the Lights"
+        }
+        return null
+    }
 
     useEffect(() => {
-        loadingRef.current = loading
-    }, [loading])
+        loadingRef.current = loading || modelLoading
+    }, [loading, modelLoading])
 
     useEffect(() => {
         if (!loading) {
@@ -116,13 +157,13 @@ export default function VoiceApp() {
             clearTimeout(thinkPauseRef.current)
             thinkPhraseRef.current = ""
             thinkIndexRef.current = 0
-            setThinkText("Assistant")
+            setThinkText(t("common.assistant"))
             return
         }
 
         function pickNextThinkPhrase() {
-            const options = THINK_PHRASES.filter((phrase) => phrase !== thinkPhraseRef.current)
-            const pool = options.length > 0 ? options : THINK_PHRASES
+            const options = thinkPhrases.filter((phrase) => phrase !== thinkPhraseRef.current)
+            const pool = options.length > 0 ? options : thinkPhrases
             return pool[Math.floor(Math.random() * pool.length)]
         }
 
@@ -156,7 +197,7 @@ export default function VoiceApp() {
             clearInterval(thinkIntervalRef.current)
             clearTimeout(thinkPauseRef.current)
         }
-    }, [loading])
+    }, [loading, thinkPhrases, t])
 
     const clearErrorTimeoutRef = useRef(null);
     
@@ -164,7 +205,7 @@ export default function VoiceApp() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
 
         if (!SpeechRecognition) {
-            setErrorText("Speech recognition is not supported in this browser.")
+            setErrorText(t("common.speechRecognitionUnsupported"))
             setWakeListeningEnabled(false)
             setListening(false)
             return
@@ -178,7 +219,7 @@ export default function VoiceApp() {
         recognition.onstart = () => {
             setListening(true)
             if (listeningEnabledRef.current) {
-                setStatusText("Awaiting activation...")
+                setStatusKey(WAITING_STATUS_KEY)
             }
         }
 
@@ -194,7 +235,7 @@ export default function VoiceApp() {
 
         recognition.onerror = (event) => {
             setListening(false)
-            setErrorText(`Recognition error: ${event.error}`)
+            setErrorText(t("voice.errors.recognitionError", { error: event.error }))
 
             if (clearErrorTimeoutRef.current != null) {
                 clearTimeout(clearErrorTimeoutRef.current);
@@ -225,36 +266,37 @@ export default function VoiceApp() {
 
                 // Follow-up mode: treat any speech as immediate command
                 if (followUpModeRef.current) {
-                    setStatusText("Sending follow-up command...")
+                    setStatusKey("voice.status.sendingFollowUp")
                     stopRecognition()
-                    await sendToBackend(transcript)
+                    await sendToBackend(checkAOTL(normalized) ?? transcript)
+
                     continue
                 }
 
                 if (awaitingCommandRef.current) {
                     awaitingCommandRef.current = false
                     setAwaitingCommand(false)
-                    setStatusText("Awaiting response...")
+                    setStatusKey("voice.status.waitingForResponse")
                     stopRecognition()
-                    await sendToBackend(transcript)
+                    await sendToBackend(checkAOTL(normalized) ?? transcript)
                     continue
                 }
 
-                const command = findWakePhraseWordsInOrder(normalized, normalizedWakePhrase)
+                const command = findWordsInOrder(normalized, normalizedWakePhrase)
                 if (command === null) continue
 
                 playNotify();
 
                 if (command) {
-                    setStatusText("Activation detected, sending command")
+                    setStatusKey("voice.status.activationDetectedSending")
                     stopRecognition()
-                    await sendToBackend(command)
+                    await sendToBackend(checkAOTL(command) ?? command)
                     continue
                 }
 
                 awaitingCommandRef.current = true
                 setAwaitingCommand(true)
-                setStatusText("Activation detected, say your command")
+                setStatusKey("voice.status.activationDetectedSpeak")
             }
         }
 
@@ -264,42 +306,143 @@ export default function VoiceApp() {
         return () => {
             clearTimeout(restartTimeoutRef.current)
             stopRecognition()
+            speechSessionRef.current?.cancel()
             recognitionRef.current = null
             window.speechSynthesis.cancel()
         }
     }, [selectedModel, i18n.language])
 
-    // Hakee kuuntelun tilan
+    // #region Kuuntelun tila
+    function checkENVvariables() {
+        if (HA_WS_API_URL === undefined || HA_ACCESS_TOKEN === undefined || HA_URL === undefined) {
+            console.log("Home Assistant address not found, check .env")
+            
+            // devaamista varten true, että toimii ilman home assistanttia
+            setHaListening(true)
+            return false
+        }
+        return true
+    }
+    
     useEffect(() => {
-        // Polling pauses when awaiting backend response (loading) or while TTS speaking
-        const interval = setInterval(async () => {
-            try {
-                // Skip polling while waiting for /chat or while TTS speaking
-                if (loadingRef.current || speakingRef.current) return
+        if (!checkENVvariables()) return
 
-                const res = await fetch(apiUrl("/voice"))
-                const data = await res.json()
-                setHaListening(data.enabled)
-                if (!data.enabled) {
-                    followUpModeRef.current = false
-                    if (followUpTimeoutRef.current) {
-                        clearTimeout(followUpTimeoutRef.current)
-                        followUpTimeoutRef.current = null
-                    }
-                }
-            } catch (error) {
-                console.log(error)
-            }
-        }, 2000)
+        function checkEntityState(state) {
+            if (state == "on") return true
+            return false
+        }
+        
+        const wsConnectTimeout = 10000
 
-        return () => {
-            clearInterval(interval)
-            if (followUpTimeoutRef.current) {
-                clearTimeout(followUpTimeoutRef.current)
-                followUpTimeoutRef.current = null
+        let ws
+        let isMounted = true
+
+        function applyFrontendLanguage(language) {
+            const nextLanguage = normalizeFrontendLanguage(language)
+
+            if (nextLanguage && nextLanguage !== currentLanguageRef.current) {
+                currentLanguageRef.current = nextLanguage
+                void i18n.changeLanguage(nextLanguage)
             }
         }
+
+        function wsConnect() {
+            ws = new WebSocket(HA_WS_API_URL)
+
+            wsRef.current = ws
+
+            const llatoken = HA_ACCESS_TOKEN
+
+            ws.onmessage = (event) => {
+                const msg = JSON.parse(event.data)
+
+                if (msg.type === "auth_required") {
+                    ws.send(JSON.stringify({
+                        type: "auth",
+                        access_token: llatoken,
+                    }))
+                }
+
+                if (msg.type === "auth_ok") {
+                    ws.send(JSON.stringify({
+                        id: 1,
+                        type: "subscribe_trigger",
+                        trigger: {
+                            platform: "state",
+                            entity_id: ENTITY_ID,
+                        },
+                    }))
+
+                    ws.send(JSON.stringify({
+                        id: 2,
+                        type: "get_states",
+                    }))
+
+                    if (LANGUAGE_ENTITY_ID) {
+                        ws.send(JSON.stringify({
+                            id: 3,
+                            type: "subscribe_trigger",
+                            trigger: {
+                                platform: "state",
+                                entity_id: LANGUAGE_ENTITY_ID,
+                            },
+                        }))
+                    }
+                }
+
+                if (msg.id === 2) {
+                    const entity = msg.result.find(
+                        (e) => e.entity_id === ENTITY_ID
+                    )
+
+                    const initialState = entity?.state
+
+                    setHaListening(checkEntityState(initialState))
+
+                    if (LANGUAGE_ENTITY_ID) {
+                        const languageEntity = msg.result.find(
+                            (e) => e.entity_id === LANGUAGE_ENTITY_ID
+                        )
+
+                        applyFrontendLanguage(languageEntity?.state)
+                    }
+                }
+
+                if (msg.type === "event" && msg.id === 1) {
+                    const trigger = msg.event.variables.trigger
+                    const newState = trigger.to_state?.state
+
+                    setHaListening(checkEntityState(newState))
+                }
+
+                if (msg.type === "event" && msg.id === 3) {
+                    const trigger = msg.event.variables.trigger
+                    const newState = trigger.to_state?.state
+
+                    applyFrontendLanguage(newState)
+                }
+            }
+
+            ws.onclose = () => {
+                if (!isMounted) return
+                console.log("Connection lost, retrying...")
+                setTimeout(wsConnect, wsConnectTimeout)
+            }
+
+            ws.onerror = (err) => {
+                console.error("WS error:", err)
+                setHaListening(false)
+            }
+        }
+
+        wsConnect()
+
+        return () => {
+            isMounted = false
+            ws?.close()
+        }
     }, [])
+    // #endregion
 
     function stopRecognition() {
         try {
@@ -319,6 +462,13 @@ export default function VoiceApp() {
         }
     }
 
+    function clearFollowUpTimeout() {
+        if (followUpTimeoutRef.current) {
+            clearTimeout(followUpTimeoutRef.current)
+            followUpTimeoutRef.current = null
+        }
+    }
+
     async function sendToBackend(commandText) {
         const message = commandText.trim()
         if (!message || loadingRef.current) return
@@ -326,85 +476,93 @@ export default function VoiceApp() {
         const userMessage = { role: "user", content: message }
         addMessages(userMessage)
         addConversationMessages(message, "user")
+        followUpModeRef.current = false
+        clearFollowUpTimeout()
         // stop recognition now; speak.onend will restart and enable follow-up window
         stopRecognition()
         setLoading(true)
-        setStatusText("Waiting for response...")
+        setStatusKey("voice.status.waitingForResponse")
 
         try {
+            speechSessionRef.current?.cancel()
+            speechSessionRef.current = voiceEnabled
+                ? webSpeechTextToSpeech.createSentenceStream({
+                    language: i18n.language,
+                    onStart: () => {
+                        speakingRef.current = true
+                    },
+                    onEnd: () => {
+                        speakingRef.current = false
+                        if (listeningEnabledRef.current && !loadingRef.current) {
+                            // restart recognition and open follow-up window
+                            startRecognition()
+                            followUpModeRef.current = true
+                            clearFollowUpTimeout()
+                            followUpTimeoutRef.current = setTimeout(() => {
+                                followUpModeRef.current = false
+                                setStatusKey(WAITING_2_STATUS_KEY)
+                                if (listeningEnabledRef.current && !loadingRef.current && !speakingRef.current) {
+                                    startRecognition()
+                                }
+                                loadSystemMessage() // re-load system message to reset context after follow-up window closes
+                            }, FOLLOWUP_TIMEOUT_MS)
+                        }
+                    },
+                    onError: () => {},
+                })
+                : null
+
+            if (voiceEnabled) {
+                // Keep recognition paused until full streamed TTS lifecycle completes.
+                speakingRef.current = true
+            }
+
+            console.log(selectedModel)
+
             const promptInfo = {
                 model: selectedModel,
                 prompt: message,
                 history: messagesRef.current,
             }
 
-            const response = await fetch(apiUrl("/chat"), {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
+            let streamedReply = ""
+            setLastReply("")
+            startStreamingBotMessage()
+            const data = await streamChat(promptInfo, {
+                onToken: (token) => {
+                    streamedReply += token
+                    appendToStreamingBotMessage(token)
+                    setLastReply((prev) => `${prev}${token}`)
+                    speechSessionRef.current?.pushText(token)
                 },
-                body: JSON.stringify(promptInfo),
             })
 
-            const data = await response.json()
-            addMessages(data)
-            addConversationMessages(data.content, "bot")
-            setLastReply(data.content)
-            speak(data.content)
-            setStatusText(WAITING)
+            speechSessionRef.current?.complete()
+
+            const finalReply = data?.content || streamedReply
+            const assistantMessage = { role: "assistant", content: finalReply }
+            addMessages(assistantMessage)
+            finalizeStreamingBotMessage(finalReply)
+            setLastReply(finalReply)
+            setStatusKey(WAITING_STATUS_KEY)
         } catch (error) {
             console.error(error)
-            setErrorText("Failed to contact backend.")
-            setStatusText(WAITING)
+            finalizeStreamingBotMessage()
+            setErrorText(t("voice.errors.backendFailed"))
+            setStatusKey(WAITING_STATUS_KEY)
         } finally {
             setLoading(false)
             // If backend fails, `speak` is never called, so restore recognition here.
             if (listeningEnabledRef.current && !speakingRef.current) {
                 followUpModeRef.current = false
-                if (followUpTimeoutRef.current) {
-                    clearTimeout(followUpTimeoutRef.current)
-                    followUpTimeoutRef.current = null
-                }
+                clearFollowUpTimeout()
                 startRecognition()
             }
         }
     }
 
-    function speak(text) {
-        if (!voiceEnabled) return
-
-        speakingRef.current = true
-        webSpeechTextToSpeech.cancel()
-
-        webSpeechTextToSpeech.speak(text, {
-            language: i18n.language,
-            onEnd: () => {
-                speakingRef.current = false
-                if (listeningEnabledRef.current && !loadingRef.current) {
-                    // restart recognition and open follow-up window
-                    startRecognition()
-                    followUpModeRef.current = true
-                    if (followUpTimeoutRef.current) clearTimeout(followUpTimeoutRef.current)
-                    followUpTimeoutRef.current = setTimeout(() => {
-                        followUpModeRef.current = false
-                        setStatusText(WAITING)
-                        if (listeningEnabledRef.current && !loadingRef.current && !speakingRef.current) {
-                            startRecognition()
-                        }
-                    }, FOLLOWUP_TIMEOUT_MS)
-                }
-            },
-            onError: () => {
-                speakingRef.current = false
-                if (listeningEnabledRef.current && !loadingRef.current) {
-                    startRecognition()
-                }
-            },
-        })
-    }
-
     const circleStyle = useMemo(() => {
-        const isActive = wakeListeningEnabled &&  haListening && !loading
+        const isActive = !modelLoading && wakeListeningEnabled && haListening && !loading
 
         return {
             width: "220px",
@@ -428,8 +586,7 @@ export default function VoiceApp() {
             letterSpacing: "0.06em",
             textTransform: "uppercase",
         }
-    }, [loading, haListening, wakeListeningEnabled]);
-
+    }, [modelLoading, loading, haListening, wakeListeningEnabled]);
     return (
         <div
             style={{
@@ -443,17 +600,19 @@ export default function VoiceApp() {
                 padding: "1rem",
             }}
         >
-            <h1 style={{ margin: 0, fontSize: "1.15rem" }}>Voice Assistant</h1>
+            <h1 style={{ margin: 0, fontSize: "1.15rem" }}>{t("voice.title")}</h1>
 
             <LanguageSelect />
 
             <ModelSelect />
 
+            <UISelector />
+
             <VoiceAvatar style={circleStyle} loading={loading} thinkText={thinkText} />
 
             <VoiceStatusDetails
                 wakePhrase={t("wakePhrase")}
-                statusText={statusText}
+                statusText={statusKey}
                 awaitingCommand={awaitingCommand}
                 lastHeard={lastHeard}
                 lastReply={lastReply}

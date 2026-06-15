@@ -1,11 +1,12 @@
+import "./i18n.js"
 import React from "react"
 import ReactDOM from "react-dom/client"
 import Routing from "./Routing"
-import "./app.css"
+import "./styles/app.css"
 
 ReactDOM.createRoot(
   document.getElementById("root")).render(
-  <React.StrictMode>
+  //<React.StrictMode>
     <Routing/>
-  </React.StrictMode>
+  //</React.StrictMode>
 )
