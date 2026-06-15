@@ -1,7 +1,7 @@
 import subprocess
 import json
 import os
-import httpx
+from httpx import InvalidURL, HTTPError
 from dotenv import load_dotenv
 from ollama import Client as OllamaClient
 from langchain_ollama import ChatOllama
@@ -27,8 +27,10 @@ class ModelManager:
             try:
                 self._ollama_client.list()
                 return
-            except (ConnectionError, TimeoutError):
+            except HTTPError:
                 time.sleep(0.5)
+            except InvalidURL:
+                raise ValueError(f"Invalid Ollama host URL: {self.ollama_host}")
 
         raise TimeoutError(f"Ollama did not become ready at {self.ollama_host or 'default host'}")
 
