@@ -137,7 +137,7 @@ export default function VoiceApp() {
 
         if (loadingRef.current || speakingRef.current) return
 
-        setStatusKey(WAITING_STATUS_KEY)
+        setStatusKey(WAITING_2_STATUS_KEY)
         startRecognition()
     }, [haListening, wakeListeningEnabled, modelLoading])
 
@@ -221,7 +221,7 @@ export default function VoiceApp() {
         recognition.onstart = () => {
             setListening(true)
             if (listeningEnabledRef.current) {
-                setStatusKey(WAITING_STATUS_KEY)
+                setStatusKey(WAITING_2_STATUS_KEY)
             }
         }
 
