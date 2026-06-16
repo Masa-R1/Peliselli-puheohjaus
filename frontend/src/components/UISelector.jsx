@@ -1,15 +1,16 @@
 import { useNavigate, useLocation } from "react-router";
 import { useTranslation } from "react-i18next"
+import { CHAT_UI_PATH, VOICE_UI_PATH } from "../Routing";
 
 export default function UISelector() {
     const navigate = useNavigate();
     const location = useLocation();
     const { t } = useTranslation()
 
-    const isVoiceApp = location.pathname !== "/chatbotapp";
+    const isVoiceApp = location.pathname !== CHAT_UI_PATH;
 
     const handleToggle = () => {
-        navigate(isVoiceApp ? "/chatbotapp" : "/");
+        navigate(isVoiceApp ? CHAT_UI_PATH : VOICE_UI_PATH);
     };
 
     return (
