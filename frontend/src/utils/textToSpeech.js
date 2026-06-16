@@ -169,10 +169,8 @@ export function createWebSpeechTextToSpeech() {
             return {
                 pushText(text) {
                     if (cancelled || closed) return
-                    //console.log("Pushing text: " + text)
-                    const modifiedText = getSpeechText(text || "")
-                    //console.log("Pushed text after modification: " + modifiedText)
-                    textBuffer += modifiedText
+
+                    if (typeof text === "string") textBuffer += text
 
                     const { completed, remainder } = splitCompletedSpeechParts(textBuffer)
                     textBuffer = remainder
