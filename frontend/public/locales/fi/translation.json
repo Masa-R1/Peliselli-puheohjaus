@@ -1,5 +1,8 @@
 {
-  "wakePhrase": "hei avustaja",
+  "wakePhrase": [
+    "hei avustaja",
+    "moi avustaja"
+  ],
   "common": {
     "assistant": "",
     "logoAlt": "SAMK-botin logo",
@@ -21,7 +24,8 @@
     "noModelsLoaded": "Malleja ei ladattu",
     "loadingModels": "Ladataan malleja...",
     "logoAlt": "SAMK-botin logo",
-    "error": "Tapahtui virhe viestin käsittelyssä."
+    "error": "Tapahtui virhe viestin käsittelyssä.",
+    "setDefaultModel": "Aseta oletusmalliksi"
   },
   "voice": {
     "title": "Puheavustaja",

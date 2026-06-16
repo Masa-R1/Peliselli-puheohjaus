@@ -29,7 +29,12 @@ i18n
 
     supportedLngs: ['en', 'fi'],
 
-    initAsync: false
+    initAsync: false,
+
+    detection: {
+      order: ['querystring', 'cookie', 'localStorage', 'navigator', 'htmlTag', 'path', 'subdomain'],
+      caches: ['cookie'],
+    }
   });
 
 

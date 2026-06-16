@@ -84,10 +84,12 @@ export default function VoiceApp() {
     const [lastReply, setLastReply] = useState("")
     const [errorText, setErrorText] = useState("")
     const [thinkText, setThinkText] = useState(t("common.assistant"))
-    const normalizedWakePhrase = useMemo(
-        () => normalizeSpeechForWakePhrase(t("wakePhrase")),
-        [t]
-    )
+    const normalizedWakePhrases = useMemo(() => {
+        const wakePhrase = t("wakePhrase", { returnObjects: true });
+
+        return (Array.isArray(wakePhrase) ? wakePhrase : [wakePhrase])
+            .map(normalizeSpeechForWakePhrase);
+    }, [t]);
     const thinkPhrases = useMemo(() => {
         const phrases = t("voice.thinkPhrases", { returnObjects: true })
         return Array.isArray(phrases) && phrases.length > 0 ? phrases : [t("chat.thinking")]
@@ -234,6 +236,8 @@ export default function VoiceApp() {
         }
 
         recognition.onerror = (event) => {
+            if (event.error === "no-speech") return
+
             setErrorText(t("voice.errors.recognitionError", { error: event.error }))
         
             if (clearErrorTimeoutRef.current === null) {
@@ -275,7 +279,13 @@ export default function VoiceApp() {
                     continue
                 }
 
-                const command = findWordsInOrder(normalized, normalizedWakePhrase)
+                let command = null
+
+                for (const normalizedWakePhrase of normalizedWakePhrases) { 
+                    command = findWordsInOrder(normalized, normalizedWakePhrase)
+                    if (command !== null) break
+                }
+
                 if (command === null) continue
 
                 playNotify();
@@ -621,7 +631,7 @@ export default function VoiceApp() {
             <VoiceAvatar style={circleStyle} loading={loading} thinkText={thinkText} />
 
             <VoiceStatusDetails
-                wakePhrase={t("wakePhrase")}
+                wakePhrase={t("wakePhrase", { returnObjects: true })[0]}
                 statusText={statusKey}
                 awaitingCommand={awaitingCommand}
                 lastHeard={lastHeard}

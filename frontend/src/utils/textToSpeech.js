@@ -11,29 +11,50 @@ function pickVoice(voices, language) {
 }
 
 function splitCompletedSpeechParts(textBuffer) {
-    const completed = []
-    let lastBoundaryIndex = 0
+    const completed = [];
+    let lastBoundaryIndex = 0;
 
     for (let i = 0; i < textBuffer.length; i += 1) {
-        const char = textBuffer[i]
-        const isSentenceEnd = ".!?。！？".includes(char)
-        const isLineBreak = char === "\n"
-        const nextChar = textBuffer[i + 1]
-        const isBoundary = isLineBreak || (isSentenceEnd && (!nextChar || /\s/.test(nextChar)))
+        const char = textBuffer[i];
+        const nextChar = textBuffer[i + 1];
 
-        if (!isBoundary) continue
+        // Sentence-ending punctuation that may indicate a speech boundary.
+        const isSentenceEnd = ".!?。！？".includes(char);
 
-        const piece = textBuffer.slice(lastBoundaryIndex, i + 1).trim()
+        // Newlines are always treated as boundaries.
+        const isLineBreak = char === "\n";
+
+        // A sentence boundary only exists when the punctuation is followed
+        // by whitespace/newline or is the final character in the buffer.
+        //
+        // This prevents splitting on decimal numbers (18.9), version numbers
+        // (v1.2.3), domains (example.com), etc., where a non-whitespace
+        // character immediately follows the period.
+        const isSentenceBoundary =
+            isSentenceEnd && (!nextChar || /\s/.test(nextChar));
+
+        const isBoundary = isLineBreak || isSentenceBoundary;
+
+        if (!isBoundary) continue;
+
+        // Extract the completed chunk and discard surrounding whitespace.
+        const piece = textBuffer.slice(lastBoundaryIndex, i + 1).trim();
+
         if (piece) {
-            completed.push(piece)
+            completed.push(piece);
         }
-        lastBoundaryIndex = i + 1
+
+        // Start the next chunk after the boundary character.
+        lastBoundaryIndex = i + 1;
     }
 
     return {
+        // Fully completed speech segments.
         completed,
+
+        // Any trailing text that has not yet reached a boundary.
         remainder: textBuffer.slice(lastBoundaryIndex),
-    }
+    };
 }
 
 function createUtterance(text, options) {
@@ -148,16 +169,16 @@ export function createWebSpeechTextToSpeech() {
             return {
                 pushText(text) {
                     if (cancelled || closed) return
-                    console.log("Pushing text: " + text)
+                    //console.log("Pushing text: " + text)
                     const modifiedText = getSpeechText(text || "")
-                    console.log("Pushed text after modification: " + modifiedText)
+                    //console.log("Pushed text after modification: " + modifiedText)
                     textBuffer += modifiedText
 
                     const { completed, remainder } = splitCompletedSpeechParts(textBuffer)
                     textBuffer = remainder
 
                     for (const part of completed) {
-                        console.log(part)
+                        //console.log(part)
                         enqueue(part)
                     }
 

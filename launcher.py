@@ -25,15 +25,17 @@ def kill_tree(proc):
 def start_apps():
     global backend_process, frontend_process, path
 
+    on_windows = os.name == "nt"
+
     backend_process = subprocess.Popen(
         ["fastapi", "run"],
         cwd=os.path.join(path, "backend"),
-        shell=True
+        shell=on_windows
     )
     frontend_process = subprocess.Popen(
         ["npm", "run", "dev"],
         cwd=os.path.join(path, "frontend"),
-        shell=True
+        shell=on_windows
     )
 
     time.sleep(2)

@@ -1,5 +1,7 @@
 {
-  "wakePhrase": "hey assistant",
+  "wakePhrase": [
+    "hey assistant"
+  ],
   "common": {
     "assistant": "",
     "logoAlt": "SAMK Bot logo",
@@ -21,7 +23,8 @@
     "noModelsLoaded": "No models loaded",
     "loadingModels": "Loading models...",
     "logoAlt": "SAMK Bot logo",
-    "error": "An error occurred while processing your message."
+    "error": "An error occurred while processing your message.",
+    "setDefaultModel": "Set as default model"
   },
   "voice": {
     "title": "Voice Assistant",
