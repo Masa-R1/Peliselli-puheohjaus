@@ -9,7 +9,7 @@ import VoiceStatusDetails from "./components/VoiceStatusDetails"
 import ModelSelect from "./components/ModelSelect"
 import UISelector from "./components/UISelector"
 import { webSpeechTextToSpeech } from "./utils/textToSpeech"
-import { streamChat, HA_ACCESS_TOKEN, HA_WS_API_URL, HA_URL, ENTITY_ID, LANGUAGE_ENTITY_ID } from "./utils/api"
+import { streamChat, HA_ACCESS_TOKEN, HA_WS_API_URL, HA_URL, LISTENING_ENTITY_ID, LANGUAGE_ENTITY_ID, RESTART_ENTITY_ID, apiUrl } from "./utils/api"
 import { normalizeFrontendLanguage } from "./utils/frontendLanguage"
 
 import useSound from 'use-sound'
@@ -307,14 +307,21 @@ export default function VoiceApp() {
 
     // #region Kuuntelun tila
     function checkENVvariables() {
-        if (HA_WS_API_URL === undefined || HA_ACCESS_TOKEN === undefined || HA_URL === undefined) {
-            console.log("Home Assistant address not found, check .env")
+        if (HA_WS_API_URL == undefined || HA_ACCESS_TOKEN == undefined || HA_URL == undefined || LANGUAGE_ENTITY_ID == undefined) {
+            console.log("Home Assistant environment variables not found, check .env")
             
             // devaamista varten true, että toimii ilman home assistanttia
             setHaListening(true)
             return false
         }
         return true
+    }
+
+    function restartApp() {        
+        fetch(apiUrl("/terminate"), {
+            method: 'POST'
+        })
+        .catch(err => console.error(err))
     }
     
     useEffect(() => {
@@ -362,7 +369,7 @@ export default function VoiceApp() {
                         type: "subscribe_trigger",
                         trigger: {
                             platform: "state",
-                            entity_id: ENTITY_ID,
+                            entity_id: LISTENING_ENTITY_ID,
                         },
                     }))
 
@@ -371,34 +378,39 @@ export default function VoiceApp() {
                         type: "get_states",
                     }))
 
-                    if (LANGUAGE_ENTITY_ID) {
-                        ws.send(JSON.stringify({
-                            id: 3,
-                            type: "subscribe_trigger",
-                            trigger: {
-                                platform: "state",
-                                entity_id: LANGUAGE_ENTITY_ID,
-                            },
-                        }))
-                    }
+                    ws.send(JSON.stringify({
+                        id: 3,
+                        type: "subscribe_trigger",
+                        trigger: {
+                            platform: "state",
+                            entity_id: LANGUAGE_ENTITY_ID,
+                        },
+                    }))
+                    
+                    ws.send(JSON.stringify({
+                        id: 4,
+                        type: "subscribe_trigger",
+                        trigger: {
+                            platform: "state",
+                            entity_id: RESTART_ENTITY_ID,
+                        },
+                    }))
                 }
 
                 if (msg.id === 2) {
                     const entity = msg.result.find(
-                        (e) => e.entity_id === ENTITY_ID
+                        (e) => e.entity_id === LISTENING_ENTITY_ID
                     )
 
                     const initialState = entity?.state
 
                     setHaListening(checkEntityState(initialState))
 
-                    if (LANGUAGE_ENTITY_ID) {
-                        const languageEntity = msg.result.find(
-                            (e) => e.entity_id === LANGUAGE_ENTITY_ID
-                        )
+                    const languageEntity = msg.result.find(
+                        (e) => e.entity_id === LANGUAGE_ENTITY_ID
+                    )
 
-                        applyFrontendLanguage(languageEntity?.state)
-                    }
+                    applyFrontendLanguage(languageEntity?.state)
                 }
 
                 if (msg.type === "event" && msg.id === 1) {
@@ -413,6 +425,11 @@ export default function VoiceApp() {
                     const newState = trigger.to_state?.state
 
                     applyFrontendLanguage(newState)
+                }
+
+                if (msg.type === "event" && msg.id === 4) {
+                    console.log("restart")
+                    restartApp()
                 }
             }
 
