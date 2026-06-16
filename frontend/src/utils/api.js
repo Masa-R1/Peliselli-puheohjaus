@@ -4,6 +4,7 @@ export const HA_ACCESS_TOKEN = import.meta.env.VITE_HA_ACCESS_TOKEN
 export const HA_URL = import.meta.env.VITE_HA_URL
 export const LISTENING_ENTITY_ID = import.meta.env.VITE_LISTENING_ENTITY_ID
 export const LANGUAGE_ENTITY_ID = import.meta.env.VITE_LANGUAGE_ENTITY_ID
+export const RESTART_ENTITY_ID = import.meta.env.VITE_RESTART_ENTITY_ID
 
 export function apiUrl(path) {
     if (!backendUrl) {

@@ -9,7 +9,7 @@ import VoiceStatusDetails from "./components/VoiceStatusDetails"
 import ModelSelect from "./components/ModelSelect"
 import UISelector from "./components/UISelector"
 import { webSpeechTextToSpeech } from "./utils/textToSpeech"
-import { streamChat, HA_ACCESS_TOKEN, HA_WS_API_URL, HA_URL, LISTENING_ENTITY_ID, LANGUAGE_ENTITY_ID } from "./utils/api"
+import { streamChat, HA_ACCESS_TOKEN, HA_WS_API_URL, HA_URL, LISTENING_ENTITY_ID, LANGUAGE_ENTITY_ID, RESTART_ENTITY_ID, apiUrl } from "./utils/api"
 import { normalizeFrontendLanguage } from "./utils/frontendLanguage"
 
 import useSound from 'use-sound'
@@ -323,6 +323,13 @@ export default function VoiceApp() {
         }
         return true
     }
+
+    function restartApp() {        
+        fetch(apiUrl("/terminate"), {
+            method: 'POST'
+        })
+        .catch(err => console.error(err))
+    }
     
     useEffect(() => {
         if (!checkENVvariables()) return
@@ -385,7 +392,16 @@ export default function VoiceApp() {
                             platform: "state",
                             entity_id: LANGUAGE_ENTITY_ID,
                         },
-                    }))                    
+                    }))
+                    
+                    ws.send(JSON.stringify({
+                        id: 4,
+                        type: "subscribe_trigger",
+                        trigger: {
+                            platform: "state",
+                            entity_id: RESTART_ENTITY_ID,
+                        },
+                    }))
                 }
 
                 if (msg.id === 2) {
@@ -416,6 +432,11 @@ export default function VoiceApp() {
                     const newState = trigger.to_state?.state
 
                     applyFrontendLanguage(newState)
+                }
+
+                if (msg.type === "event" && msg.id === 4) {
+                    console.log("restart")
+                    restartApp()
                 }
             }
 
