@@ -26,4 +26,4 @@ pääsevän käsiksi. Ohjeet löytyvät aikaisemmasta linkistä
 
 3. Lisää `.env` tiedostoon muuttujat `.env.example` tiedoston mukaisesti
 
-Jos et halua käyttää Home Assistanttia, älä lisää `.env` tiedostoa
+Jos et halua käyttää Home Assistanttia, älä lisää `.env` tiedostoon Home Assistanttiin liittyviä muuttujia
