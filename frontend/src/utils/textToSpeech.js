@@ -148,12 +148,16 @@ export function createWebSpeechTextToSpeech() {
             return {
                 pushText(text) {
                     if (cancelled || closed) return
-                    textBuffer += getSpeechText(text || "")
+                    console.log("Pushing text: " + text)
+                    const modifiedText = getSpeechText(text || "")
+                    console.log("Pushed text after modification: " + modifiedText)
+                    textBuffer += modifiedText
 
                     const { completed, remainder } = splitCompletedSpeechParts(textBuffer)
                     textBuffer = remainder
 
                     for (const part of completed) {
+                        console.log(part)
                         enqueue(part)
                     }
 

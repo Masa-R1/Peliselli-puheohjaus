@@ -234,21 +234,14 @@ export default function VoiceApp() {
         }
 
         recognition.onerror = (event) => {
-            setListening(false)
             setErrorText(t("voice.errors.recognitionError", { error: event.error }))
-
-            if (clearErrorTimeoutRef.current != null) {
-                clearTimeout(clearErrorTimeoutRef.current);
-            }
-
-            clearErrorTimeoutRef.current = setTimeout(() => {
-                setErrorText("");
-                setListening(true);
-            }, 3000);
-
-            if (event.error === "not-allowed" || event.error === "service-not-allowed") {
-                setWakeListeningEnabled(false)
-            }
+        
+            if (clearErrorTimeoutRef.current === null) {
+                clearErrorTimeoutRef.current = setTimeout(() => {
+                    window.location.reload();
+                    clearErrorTimeoutRef.current = null;    
+                }, 3000);
+            }   
         }
         
         recognition.onresult = async (event) => {

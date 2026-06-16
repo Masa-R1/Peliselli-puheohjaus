@@ -31,13 +31,12 @@ function Input() {
     }
 
     function toggleVoice() {
-        setVoiceEnabled((prev) => {
-            if (prev) {
-                speechSessionRef.current?.cancel()
-                webSpeechTextToSpeech.cancel()
-            }
-            return !prev
-        })
+        if (voiceEnabled) {
+            speechSessionRef.current?.cancel()
+            webSpeechTextToSpeech.cancel()
+        }
+
+        setVoiceEnabled(!voiceEnabled);
     }
 
     async function sendMessage() {

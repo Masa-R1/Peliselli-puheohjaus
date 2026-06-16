@@ -1,5 +1,7 @@
 export function getSpeechText(text) {
-    return String(text ?? "")
+    if (typeof text !== "string") return "";
+
+    return text
         .replace(/```[\s\S]*?```/g, (match) => match.replace(/```/g, " "))
         .replace(/`([^`]+)`/g, "$1")
         .replace(/!\[([^\]]*)\]\([^\)]+\)/g, "$1")
