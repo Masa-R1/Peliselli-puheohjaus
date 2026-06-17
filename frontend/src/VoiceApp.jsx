@@ -78,8 +78,6 @@ export default function VoiceApp() {
     const { selectedModel, modelLoading } = useModelStore()
 
     const [wakeListeningEnabled, setWakeListeningEnabled] = useState(true)
-    const [awaitingCommand, setAwaitingCommand] = useState(false)
-    const [statusKey, setStatusKey] = useState(WAITING_2_STATUS_KEY)
     const [lastHeard, setLastHeard] = useState("")
     const [lastReply, setLastReply] = useState("")
     const [errorText, setErrorText] = useState("")
@@ -128,8 +126,6 @@ export default function VoiceApp() {
         listeningEnabledRef.current = active
 
         if (!active) {
-            setStatusKey("voice.status.wakeListenerDisabled")
-            setAwaitingCommand(false)
             awaitingCommandRef.current = false
             stopRecognition()
             return
@@ -137,7 +133,6 @@ export default function VoiceApp() {
 
         if (loadingRef.current || speakingRef.current) return
 
-        setStatusKey(WAITING_STATUS_KEY)
         startRecognition()
     }, [haListening, wakeListeningEnabled, modelLoading])
 
@@ -201,7 +196,16 @@ export default function VoiceApp() {
         }
     }, [loading, thinkPhrases, t])
 
-    const clearErrorTimeoutRef = useRef(null);
+    const clearErrorTimeoutRef = useRef(null);    
+
+    function resetError() {
+        if (clearErrorTimeoutRef.current !== null) {
+            clearTimeout(clearErrorTimeoutRef.current)
+            clearErrorTimeoutRef.current = null              
+        }
+                
+        setErrorText("")
+    }
     
     useEffect(() => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
@@ -220,9 +224,6 @@ export default function VoiceApp() {
 
         recognition.onstart = () => {
             setListening(true)
-            if (listeningEnabledRef.current) {
-                setStatusKey(WAITING_STATUS_KEY)
-            }
         }
 
         recognition.onend = () => {
@@ -240,16 +241,18 @@ export default function VoiceApp() {
 
             setErrorText(t("voice.errors.recognitionError", { error: event.error }))
         
-            if (clearErrorTimeoutRef.current === null) {
+            if (event.error !== "network" && clearErrorTimeoutRef.current === null) {
                 clearErrorTimeoutRef.current = setTimeout(() => {
                     window.location.reload();
                     clearErrorTimeoutRef.current = null;    
-                }, 3000);
+                }, 5000);
             }   
         }
         
         recognition.onresult = async (event) => {
             if (speakingRef.current) return
+
+            let gotResult = false
 
             for (let i = event.resultIndex; i < event.results.length; i += 1) {
                 const result = event.results[i]
@@ -258,12 +261,14 @@ export default function VoiceApp() {
                 const transcript = result[0].transcript.trim()
                 if (!transcript) continue
 
+                gotResult = true                
+
                 setLastHeard(transcript)
                 const normalized = normalizeSpeechForWakePhrase(transcript)
 
                 // Follow-up mode: treat any speech as immediate command
                 if (followUpModeRef.current) {
-                    setStatusKey("voice.status.sendingFollowUp")
+
                     stopRecognition()
                     await sendToBackend(checkAOTL(normalized) ?? transcript)
 
@@ -272,8 +277,6 @@ export default function VoiceApp() {
 
                 if (awaitingCommandRef.current) {
                     awaitingCommandRef.current = false
-                    setAwaitingCommand(false)
-                    setStatusKey("voice.status.waitingForResponse")
                     stopRecognition()
                     await sendToBackend(checkAOTL(normalized) ?? transcript)
                     continue
@@ -291,16 +294,15 @@ export default function VoiceApp() {
                 playNotify();
 
                 if (command) {
-                    setStatusKey("voice.status.activationDetectedSending")
                     stopRecognition()
                     await sendToBackend(checkAOTL(command) ?? command)
                     continue
                 }
 
                 awaitingCommandRef.current = true
-                setAwaitingCommand(true)
-                setStatusKey("voice.status.activationDetectedSpeak")
             }
+
+            if (gotResult) resetError()
         }
 
         recognitionRef.current = recognition
@@ -491,6 +493,7 @@ export default function VoiceApp() {
 
     async function sendToBackend(commandText) {
         const message = commandText.trim()
+        
         if (!message || loadingRef.current) return
 
         const userMessage = { role: "user", content: message }
@@ -501,7 +504,6 @@ export default function VoiceApp() {
         // stop recognition now; speak.onend will restart and enable follow-up window
         stopRecognition()
         setLoading(true)
-        setStatusKey("voice.status.waitingForResponse")
 
         try {
             speechSessionRef.current?.cancel()
@@ -520,10 +522,11 @@ export default function VoiceApp() {
                             clearFollowUpTimeout()
                             followUpTimeoutRef.current = setTimeout(() => {
                                 followUpModeRef.current = false
-                                setStatusKey(WAITING_2_STATUS_KEY)
+
                                 if (listeningEnabledRef.current && !loadingRef.current && !speakingRef.current) {
                                     startRecognition()
                                 }
+
                                 loadSystemMessage() // re-load system message to reset context after follow-up window closes
                             }, FOLLOWUP_TIMEOUT_MS)
                         }
@@ -564,12 +567,10 @@ export default function VoiceApp() {
             addMessages(assistantMessage)
             finalizeStreamingBotMessage(finalReply)
             setLastReply(finalReply)
-            setStatusKey(WAITING_STATUS_KEY)
         } catch (error) {
             console.error(error)
             finalizeStreamingBotMessage()
             setErrorText(t("voice.errors.backendFailed"))
-            setStatusKey(WAITING_STATUS_KEY)
         } finally {
             setLoading(false)
             // If backend fails, `speak` is never called, so restore recognition here.
@@ -607,6 +608,18 @@ export default function VoiceApp() {
             textTransform: "uppercase",
         }
     }, [modelLoading, loading, haListening, wakeListeningEnabled]);
+
+
+    function GetStatusTextKey() {
+        if (loading) return "voice.status.waitingForResponse"
+
+        if (modelLoading || !haListening || !wakeListeningEnabled) return "voice.status.wakeListenerDisabled"
+
+        if (awaitingCommandRef.current) return "voice.status.activationDetectedSpeak"
+
+        return followUpModeRef.current ? WAITING_STATUS_KEY : WAITING_2_STATUS_KEY
+    }
+
     return (
         <div
             style={{
@@ -632,8 +645,8 @@ export default function VoiceApp() {
 
             <VoiceStatusDetails
                 wakePhrase={t("wakePhrase", { returnObjects: true })[0]}
-                statusText={statusKey}
-                awaitingCommand={awaitingCommand}
+                statusText={t(GetStatusTextKey())}
+                awaitingCommand={awaitingCommandRef.current}
                 lastHeard={lastHeard}
                 lastReply={lastReply}
                 errorText={errorText}
