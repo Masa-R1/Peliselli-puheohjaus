@@ -611,7 +611,7 @@ export default function VoiceApp() {
 
 
     function GetStatusTextKey() {
-        if (loading) return "voice.status.waitingForResponse"
+        if (loading || speakingRef.current) return "voice.status.waitingForResponse"
 
         if (modelLoading || !haListening || !wakeListeningEnabled) return "voice.status.wakeListenerDisabled"
 
@@ -645,7 +645,7 @@ export default function VoiceApp() {
 
             <VoiceStatusDetails
                 wakePhrase={t("wakePhrase", { returnObjects: true })[0]}
-                statusText={t(GetStatusTextKey())}
+                statusText={GetStatusTextKey()}
                 awaitingCommand={awaitingCommandRef.current}
                 lastHeard={lastHeard}
                 lastReply={lastReply}
