@@ -109,6 +109,7 @@ export default function VoiceApp() {
     const speechSessionRef = useRef(null)
     const wsRef = useRef(null)
     const currentLanguageRef = useRef(i18n.resolvedLanguage || i18n.language)
+    const networkErrorCountRef = useRef(0)
     //#endregion
 
     useEffect(() => {
@@ -205,6 +206,8 @@ export default function VoiceApp() {
                 
         setErrorText("")
     }
+
+
     
     useEffect(() => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
@@ -235,12 +238,18 @@ export default function VoiceApp() {
             }, 250)
         }
 
+        setInterval(() => networkErrorCountRef.current = 0, 60 * 1000) // reset network error count every minute
+
         recognition.onerror = (event) => {
             if (event.error === "no-speech") return
 
             setErrorText(t("voice.errors.recognitionError", { error: event.error }))
-        
-            if (event.error !== "network" && clearErrorTimeoutRef.current === null) {
+
+            const isNetworkError = event.error === "network"
+
+            if (isNetworkError) networkErrorCountRef.current = networkErrorCountRef.current + 1
+
+            if ((!isNetworkError || networkErrorCountRef.current > 3) && clearErrorTimeoutRef.current === null) {
                 clearErrorTimeoutRef.current = setTimeout(() => {
                     window.location.reload();
                     clearErrorTimeoutRef.current = null;    
