@@ -570,6 +570,13 @@ export default function VoiceApp() {
             finalizeStreamingBotMessage()
             setErrorText(t("voice.errors.backendFailed"))
             setStatusKey(WAITING_STATUS_KEY)
+            
+            if (clearErrorTimeoutRef.current === null) {
+                clearErrorTimeoutRef.current = setTimeout(() => {
+                    window.location.reload();
+                    clearErrorTimeoutRef.current = null;    
+                }, 3000);
+            }
         } finally {
             setLoading(false)
             // If backend fails, `speak` is never called, so restore recognition here.

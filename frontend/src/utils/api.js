@@ -79,6 +79,7 @@ export async function streamChat(promptInfo, options = {}) {
 
     if (streamError) {
         console.error("Chat stream backend error:", streamError)
+        throw new Error("Chat stream backend error")
     }
 
     return finalMessage
