@@ -100,7 +100,6 @@ export default function VoiceApp() {
     const thinkPauseRef = useRef(null)
     const listeningEnabledRef = useRef(true)
     const loadingRef = useRef(false)
-    const speakingRef = useRef(false)
     const messagesRef = useRef(messages)
     const awaitingCommandRef = useRef(false)
     const followUpModeRef = useRef(false)
@@ -131,7 +130,7 @@ export default function VoiceApp() {
             return
         }
 
-        if (loadingRef.current || speakingRef.current) return
+        if (loadingRef.current || speechSessionRef.current?.isSpeaking()) return
 
         startRecognition()
     }, [haListening, wakeListeningEnabled, modelLoading])
@@ -228,7 +227,7 @@ export default function VoiceApp() {
 
         recognition.onend = () => {
             setListening(false)
-            if (!listeningEnabledRef.current || loadingRef.current || speakingRef.current) return
+            if (!listeningEnabledRef.current || loadingRef.current || speechSessionRef.current?.isSpeaking()) return
 
             clearTimeout(restartTimeoutRef.current)
             restartTimeoutRef.current = setTimeout(() => {
@@ -250,7 +249,7 @@ export default function VoiceApp() {
         }
         
         recognition.onresult = async (event) => {
-            if (speakingRef.current) return
+            if (speechSessionRef.current?.isSpeaking()) return
 
             let gotResult = false
 
@@ -313,7 +312,7 @@ export default function VoiceApp() {
             stopRecognition()
             speechSessionRef.current?.cancel()
             recognitionRef.current = null
-            window.speechSynthesis.cancel()
+            //window.speechSynthesis.cancel()
         }
     }, [selectedModel, i18n.language])
 
@@ -475,7 +474,7 @@ export default function VoiceApp() {
     }
 
     function startRecognition() {
-        if (!listeningEnabledRef.current || loadingRef.current || speakingRef.current) return
+        if (!listeningEnabledRef.current || loadingRef.current || speechSessionRef.current?.isSpeaking()) return
 
         try {
             recognitionRef.current?.start()
@@ -510,11 +509,7 @@ export default function VoiceApp() {
             speechSessionRef.current = voiceEnabled
                 ? webSpeechTextToSpeech.createSentenceStream({
                     language: i18n.language,
-                    onStart: () => {
-                        speakingRef.current = true
-                    },
                     onEnd: () => {
-                        speakingRef.current = false
                         if (listeningEnabledRef.current && !loadingRef.current) {
                             // restart recognition and open follow-up window
                             startRecognition()
@@ -523,7 +518,7 @@ export default function VoiceApp() {
                             followUpTimeoutRef.current = setTimeout(() => {
                                 followUpModeRef.current = false
 
-                                if (listeningEnabledRef.current && !loadingRef.current && !speakingRef.current) {
+                                if (listeningEnabledRef.current && !loadingRef.current && !speechSessionRef.current?.isSpeaking()) {
                                     startRecognition()
                                 }
 
@@ -534,11 +529,6 @@ export default function VoiceApp() {
                     onError: () => {},
                 })
                 : null
-
-            if (voiceEnabled) {
-                // Keep recognition paused until full streamed TTS lifecycle completes.
-                speakingRef.current = true
-            }
 
             console.log(selectedModel)
 
@@ -581,7 +571,7 @@ export default function VoiceApp() {
         } finally {
             setLoading(false)
             // If backend fails, `speak` is never called, so restore recognition here.
-            if (listeningEnabledRef.current && !speakingRef.current) {
+            if (listeningEnabledRef.current && !speechSessionRef.current?.isSpeaking()) {
                 followUpModeRef.current = false
                 clearFollowUpTimeout()
                 startRecognition()
@@ -618,7 +608,7 @@ export default function VoiceApp() {
 
 
     function GetStatusTextKey() {
-        if (loading || speakingRef.current) return "voice.status.waitingForResponse"
+        if (loading || speechSessionRef.current?.isSpeaking()) return "voice.status.waitingForResponse"
 
         if (modelLoading || !haListening || !wakeListeningEnabled) return "voice.status.wakeListenerDisabled"
 

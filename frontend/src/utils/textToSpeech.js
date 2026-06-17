@@ -90,6 +90,7 @@ export function createWebSpeechTextToSpeech() {
                     pushText() {},
                     complete() {},
                     cancel() {},
+                    isSpeaking() { return false },  
                     finished: Promise.resolve(),
                 }
             }
@@ -198,6 +199,9 @@ export function createWebSpeechTextToSpeech() {
                     textBuffer = ""
                     window.speechSynthesis.cancel()
                     maybeFinalize()
+                },
+                isSpeaking() {
+                    return speaking;
                 },
                 finished,
             }
