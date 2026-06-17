@@ -186,10 +186,11 @@ async def build_agent():
     mcp_tools = await get_mcp_tools()
     local_tools = [*get_local_tools(), get_model_information]
 
-    if not mcp_tools:
+    if not mcp_tools or len(mcp_tools) < 1:
         tools = local_tools
     else:
-        tools = mcp_tools + local_tools
+        # Avoid duplicate tools with same functionality
+        tools = [x for x in (mcp_tools + local_tools) if x.name != "get_date_and_time"]  
 
     agent = create_agent(
         model=model_manager.selected_model,
