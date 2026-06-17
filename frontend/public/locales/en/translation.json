@@ -1,6 +1,10 @@
 {
   "wakePhrase": [
-    "hey assistant"
+    "hey assistant",
+    "hi assistant",
+    "hate assistant",
+    "ate assistant",
+    "high assistant"
   ],
   "common": {
     "assistant": "",
