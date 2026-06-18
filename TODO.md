@@ -9,3 +9,5 @@ Tässä juttuja mitä on jäänyt kesken / olisi hyvä toteuttaa.
 - Skenet toimivat tällä hetkellä automaatioiden kautta, joita ei Home Assistantin työkaluilla voi suoraan triggeröidä. Automaatioita voisi triggeröidä helppereiden kautta, joiden arvoja tekoäly osaa muuttaa.
 
 - Mahdollisesti erillinen palvelu TTS ja STT systeemeille.
+
+- Shut Up! nappi, mykistää AI:n heti.
