@@ -5,11 +5,11 @@ Home Assistant järjestelmän valoja.
 
 ## Backend
 
-Backend on tarkoitus toteuttaa käyttäen Ollamaa, LangChainia ja FastAPIa. Löydät tarkemmat ohjeet backend kansion `INSTALLATION.md` tiedostosta.
+Backend on tarkoitus toteuttaa käyttäen Ollamaa, LangChainia ja FastAPIa. Löydät tarkemmat ohjeet backend kansion `INSTALL.md` tiedostosta.
 
 ## Frontend
 
-Frontend on tarkoitus toteuttaa Reactilla, jossa olisi tarkoitus käyttää jotakin puheentunnistus palvelua. Löydät tarkemmat ohjeet frontend kansion `INSTALLATION.md` tiedostosta.
+Frontend on tarkoitus toteuttaa Reactilla, jossa olisi tarkoitus käyttää jotakin puheentunnistus palvelua. Löydät tarkemmat ohjeet frontend kansion `INSTALL.md` tiedostosta.
 
 ## Home Assistant
 

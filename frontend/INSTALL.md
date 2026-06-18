@@ -11,6 +11,8 @@ Ohjelma toimii 25 ja 24 alkuisilla node versiolla
 
 2. Ohjelman voit käynnistää `start.sh` skriptillä, joka aukaisee Chromen ja laittaa frontendin pyörimään
 
+Ohjelman voi myös käynnistää juuressa sijaitsevalla `launcher.py` skriptillä (katso tarkemmat ohjeet backendin `INSTALL.md` tiedostosta)
+
 ## ENV
 
 Frontend käyttää `VITE_BACKEND_URL`-ympäristömuuttujaa, jos se on asetettu. Ilman sitä kehityspalvelin proxyttää pyynnöt osoitteeseen `http://localhost:8000` (8000 on FastAPIn oletusportti)
