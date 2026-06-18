@@ -45,12 +45,12 @@
       "Tuotan suttua..."
     ],
     "status": {
-      "waiting": "Odotan kehotetta...",
+      "waiting": "Kuuntelen...",
       "wakeListenerDisabled": "Herätesanan kuuntelu pois käytöstä",
       "sendingFollowUp": "Lähetän jatkokomennon...",
       "activationDetectedSending": "Aktivointi havaittu, lähetän komennon",
-      "activationDetectedSpeak": "Aktivointi havaittu, sano komento",
-      "waitingForResponse": "Odotan vastausta...",
+      "activationDetectedSpeak": "Aktivoitu...",
+      "waitingForResponse": "Pohdin...",
       "waitingForWakePhrase": "Odotan herätesanaa..."
     },
     "labels": {

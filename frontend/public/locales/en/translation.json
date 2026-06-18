@@ -41,12 +41,12 @@
       "Generating slop..."
     ],
     "status": {
-      "waiting": "Awaiting command...",
+      "waiting": "Listening...",
       "wakeListenerDisabled": "Wake listener disabled",
       "sendingFollowUp": "Sending follow-up command...",
       "activationDetectedSending": "Activation detected, sending command",
-      "activationDetectedSpeak": "Activation detected, say your command",
-      "waitingForResponse": "Waiting for response...",
+      "activationDetectedSpeak": "Activated...",
+      "waitingForResponse": "Thinking...",
       "waitingForWakePhrase": "Waiting for wake phrase..."
     },
     "labels": {
