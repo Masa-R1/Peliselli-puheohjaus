@@ -1,9 +1,19 @@
-import { useTranslation } from "react-i18next"
+import Persona from "./Persona.jsx";
 
-function VoiceAvatar({ style, loading, thinkText }) {
-    const { t } = useTranslation()
+function VoiceAvatar({ loading, isActive, isSpeaking }) {
+  const state = loading
+    ? "thinking"
+    : isSpeaking
+      ? "speaking"
+      : isActive
+        ? "listening"
+        : "idle";
 
-    return <div style={style}>{loading ? thinkText : t("common.assistant")}</div>
+  return (
+    <div style={{ width: "300px", height: "300px" }}>
+      <Persona state={state} />
+    </div>
+  );
 }
 
-export default VoiceAvatar
+export default VoiceAvatar;
