@@ -626,6 +626,13 @@ export default function VoiceApp() {
         return followUpModeRef.current ? WAITING_STATUS_KEY : WAITING_2_STATUS_KEY
     }
 
+    // Jotain jotain jotain saatana
+    const statusText = GetStatusTextKey()
+
+    useEffect(() => {
+        
+    }, [statusText])
+
     return (
         <div
             style={{
@@ -651,7 +658,7 @@ export default function VoiceApp() {
 
             <VoiceStatusDetails
                 wakePhrase={t("wakePhrase", { returnObjects: true })[0]}
-                statusText={GetStatusTextKey()}
+                statusText={statusText}
                 awaitingCommand={awaitingCommandRef.current}
                 lastHeard={lastHeard}
                 lastReply={lastReply}
