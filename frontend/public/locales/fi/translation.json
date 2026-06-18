@@ -45,12 +45,12 @@
       "Tuotan suttua..."
     ],
     "status": {
-      "waiting": "Odotan kehotetta...",
+      "waiting": "Kuuntelen...",
       "wakeListenerDisabled": "Herätesanan kuuntelu pois käytöstä",
       "sendingFollowUp": "Lähetän jatkokomennon...",
       "activationDetectedSending": "Aktivointi havaittu, lähetän komennon",
-      "activationDetectedSpeak": "Aktivointi havaittu, sano komento",
-      "waitingForResponse": "Odotan vastausta...",
+      "activationDetectedSpeak": "Aktivoitu...",
+      "waitingForResponse": "Pohdin...",
       "waitingForWakePhrase": "Odotan herätesanaa..."
     },
     "labels": {
@@ -68,5 +68,5 @@
       "enableListening": "Ota kuuntelu käyttöön"
     }
   },
-  "systemMessage": "Olet ystävällinen ja avulias Home Assistant -avustaja. Sijaitset Pelisellissä, SAMK:n (Satakunnan ammattikorkeakoulu) alueella Porissa, Suomessa.\n\nVoit ohjata Home Assistant ‑laitteita ja käyttää saatavilla olevia työkaluja.\n\nOhjeet:\n- Ole ytimekäs, selkeä ja ystävällinen.\n- Vastaa vain suomeksi, paitsi jos sinua pyydetään kääntämään.\n- Suosi toimimista, kun käyttäjä antaa komennon.\n- Käytä työkaluja reaaliaikaisen tiedon saamiseksi.\n- Jos sinua pyydetään muuttamaan valojen tai muunlaistein laitteiden tilaa, mutta ei ole selvää minkä (esim. vaihda kaikki valot 50% tai siniseksi), hae ensin lista saatavilla olevista entiteeteistä GetLiveContext työkalulla ja päättele sen perusteella minkä laitteiden tilaa muuttaa.\n- Käytä GetLiveContext-työkalulla saatuja entiteettien nimiä työkaluja kutsuttaessa."
+  "systemMessage": "Olet ystävällinen ja avulias Home Assistant -avustaja. Sijaitset Pelisellissä, SAMK:n (Satakunnan ammattikorkeakoulu) alueella Porissa, Suomessa.\n\nVoit ohjata Home Assistant ‑laitteita ja käyttää saatavilla olevia työkaluja.\n\nOhjeet:\n- Ole ytimekäs, selkeä ja ystävällinen.\n- Vastaa vain suomeksi, paitsi jos sinua pyydetään kääntämään.\n- Suosi toimimista, kun käyttäjä antaa komennon.\n- Käytä työkaluja reaaliaikaisen tiedon saamiseksi.\n- Jos sinua pyydetään muuttamaan valojen tai muunlaistein laitteiden tilaa, mutta ei ole selvää minkä (esim. vaihda kaikki valot 50% tai siniseksi), hae ensin lista saatavilla olevista entiteeteistä GetLiveContext työkalulla ja päättele sen perusteella minkä laitteiden tilaa muuttaa.\n- Käytä GetLiveContext-työkalulla saatuja entiteettien nimiä työkaluja kutsuttaessa.\n- ÄLÄ käytä emojeita missään tapauksessa"
 }

@@ -107,6 +107,7 @@ export default function VoiceApp() {
     const thinkPhraseRef = useRef("")
     const thinkIndexRef = useRef(0)
     const speechSessionRef = useRef(null)
+    const statusSpeechSessionRef = useRef(null)
     const wsRef = useRef(null)
     const currentLanguageRef = useRef(i18n.resolvedLanguage || i18n.language)
     const networkErrorCountRef = useRef(0)
@@ -630,7 +631,19 @@ export default function VoiceApp() {
     const statusText = GetStatusTextKey()
 
     useEffect(() => {
+        statusSpeechSessionRef.current?.cancel()
+
+        statusSpeechSessionRef.current = voiceEnabled
+            ? webSpeechTextToSpeech.createSentenceStream({
+                    language: i18n.language,
+                    onStart: () => {},
+                    onEnd: () => {},
+                    onError: () => {},
+                })
+                : null
         
+        statusSpeechSessionRef.current?.pushText(t(statusText))
+        statusSpeechSessionRef.current?.complete()
     }, [statusText])
 
     return (
